@@ -4,8 +4,8 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// console.log(getCommits("c:/jenasoft/dbgate", "master").slice(-3));
-// console.log(getCommits("c:/jenasoft/dbgate", "master").slice(0, 3));
+// console.log(getCommits('c:/jenasoft/dbgate', 'master').slice(-3));
+// console.log(getCommits('c:/jenasoft/dbgate', 'master').slice(0, 3));
 // process.exit(0);
 
 // ------------------------------
@@ -87,8 +87,9 @@ function loadState() {
     }
   } catch (err) {
     console.error('Error loading state:', err);
+    process.exit(1);
   }
-  // Structure: { repo1: { branchName: [commitHash, ...] }, repo2: {...}, repo3: {...} }
+  // Structure: { repo1: { branchName: commitHash }, repo2: {...}, repo3: {...} }
   return { repo1: {}, repo2: {}, repo3: {} };
 }
 
@@ -119,8 +120,17 @@ function markCommitProcessed(state, repo, branch, commitHash) {
 // Git diff and file operations
 // ------------------------------
 function getCommits(repoPath, branch) {
-  const log = runGitCommand(repoPath, `log ${branch} --pretty=format:"%H"`);
-  return log.split('\n').filter(Boolean);
+  const log = runGitCommand(repoPath, `log ${branch} --pretty=format:"%H|%ct"`);
+  return log
+    .split('\n')
+    .filter(Boolean)
+    .map(x => {
+      const [commit, ts] = x.split('|');
+      return {
+        commit,
+        ts: parseInt(ts),
+      };
+    });
 }
 
 function getDiffForCommit(repoPath, commitHash) {
@@ -283,6 +293,11 @@ const state = loadState();
 branches.forEach(branch => {
   console.log(`\n=== Processing branch: ${branch} ===\n`);
 
+  const repo1Commits = getCommits(repoPaths.repo1, branch);
+  const repo2Commits = getCommits(repoPaths.repo2, branch);
+  const repo3Commits = getCommits(repoPaths.repo3, branch);
+
+
   // For each repository, checkout the branch.
   for (const repoName in repoPaths) {
     const repoPath = repoPaths[repoName];
@@ -293,7 +308,6 @@ branches.forEach(branch => {
   // Process commits for each repository.
   // Note: The processing functions assume that the repo's working copy is on the branch being processed.
   // Process repo1 (base) commits.
-  const repo1Commits = getCommits(repoPaths.repo1, branch);
   repo1Commits.forEach(commitHash => {
     if (!isCommitProcessed(state, 'repo1', branch, commitHash)) {
       processRepo1Commit(commitHash, branch, state);
@@ -303,7 +317,6 @@ branches.forEach(branch => {
   });
 
   // Process repo2 (diff) commits.
-  const repo2Commits = getCommits(repoPaths.repo2, branch);
   repo2Commits.forEach(commitHash => {
     if (!isCommitProcessed(state, 'repo2', branch, commitHash)) {
       processRepo2Commit(commitHash, branch, state);
@@ -313,7 +326,6 @@ branches.forEach(branch => {
   });
 
   // Process repo3 (merged) commits.
-  const repo3Commits = getCommits(repoPaths.repo3, branch);
   repo3Commits.forEach(commitHash => {
     if (!isCommitProcessed(state, 'repo3', branch, commitHash)) {
       processRepo3Commit(commitHash, branch, state);

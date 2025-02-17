@@ -1,18 +1,18 @@
-const fs = require("fs-extra");
-const path = require("path");
-const { execSync } = require("child_process");
+const fs = require('fs-extra');
+const path = require('path');
+const { execSync } = require('child_process');
 
 const REPOS = {
-  BASE: "test-base-repo",
-  DIFF: "test-diff-repo",
-  MERGED: "test-merged-repo",
-  CONFIG: "test-config-repo",
+  BASE: 'test-base-repo',
+  DIFF: 'test-diff-repo',
+  MERGED: 'test-merged-repo',
+  CONFIG: 'test-config-repo',
 };
 
 function initRepo(name) {
   const repoPath = path.join(__dirname, name);
   fs.ensureDirSync(repoPath);
-  execSync("git init", { cwd: repoPath });
+  execSync('git init', { cwd: repoPath });
   // Configure git user for the test
   execSync('git config user.email "test@example.com"', { cwd: repoPath });
   execSync('git config user.name "Test User"', { cwd: repoPath });
@@ -21,16 +21,19 @@ function initRepo(name) {
 
 function createCommit(repoPath, fileName, content) {
   fs.writeFileSync(path.join(repoPath, fileName), content);
-  execSync("git add .", { cwd: repoPath });
+  execSync('git add .', { cwd: repoPath });
   execSync('git commit -m "Initial commit"', { cwd: repoPath });
+
+  const commitHash = execSync('git rev-parse HEAD', { cwd: repoPath }).toString().trim();
+  return commitHash;
 }
 
-describe("Git Repository Tests", () => {
+describe('Git Repository Tests', () => {
   const repos = {};
 
   beforeEach(() => {
     // Cleanup repositories
-    Object.values(REPOS).forEach((name) => {
+    Object.values(REPOS).forEach(name => {
       try {
         fs.removeSync(path.join(__dirname, name));
       } catch (e) {}
@@ -42,14 +45,14 @@ describe("Git Repository Tests", () => {
     });
 
     // Setup initial files
-    createCommit(repos.BASE, "file1.txt", "original content");
-    createCommit(repos.DIFF, "file1.txt", "original content");
-    createCommit(repos.MERGED, "file1.txt", "original content");
+    const baseHash = createCommit(repos.BASE, 'file1.txt', 'original content');
+    const diffHash = createCommit(repos.DIFF, 'file1.txt', 'original content');
+    const mergedHash = createCommit(repos.MERGED, 'file1.txt', 'original content');
 
     // Create config.json in config repo
     const configContent = JSON.stringify(
       {
-        branches: ["master"],
+        branches: ['master'],
         repos: {
           repo1: repos.BASE,
           repo2: repos.DIFF,
@@ -59,7 +62,25 @@ describe("Git Repository Tests", () => {
       null,
       2
     );
-    createCommit(repos.CONFIG, "config.json", configContent);
+    createCommit(repos.CONFIG, 'config.json', configContent);
+
+    // Create state.json in config repo
+    const stateContent = JSON.stringify(
+      {
+        repo1: {
+          master: baseHash,
+        },
+        repo2: {
+          master: diffHash,
+        },
+        repo3: {
+          master: mergedHash,
+        },
+      },
+      null,
+      2
+    );
+    createCommit(repos.CONFIG, 'state.json', stateContent);
   });
 
   // afterEach(() => {
@@ -69,60 +90,49 @@ describe("Git Repository Tests", () => {
   //     });
   // });
 
-  test.only("Adding new files", async () => {
+  test.only('Adding new files', async () => {
     // Add new file in diff repo
-    createCommit(repos.DIFF, "newfile.txt", "new content");
+    createCommit(repos.DIFF, 'newfile.txt', 'new content');
 
     // Run gitdiff tool
-    execSync("node gitdiff.js " + repos.CONFIG, { cwd: __dirname });
+    execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });
 
     // Verify changes
-    expect(fs.existsSync(path.join(repos.MERGED, "newfile.txt"))).toBe(true);
-    expect(
-      fs.readFileSync(path.join(repos.MERGED, "newfile.txt"), "utf8")
-    ).toBe("new content");
-    expect(fs.existsSync(path.join(repos.BASE, "newfile.txt"))).toBe(false);
+    expect(fs.existsSync(path.join(repos.MERGED, 'newfile.txt'))).toBe(true);
+    expect(fs.readFileSync(path.join(repos.MERGED, 'newfile.txt'), 'utf8')).toBe('new content');
+    expect(fs.existsSync(path.join(repos.BASE, 'newfile.txt'))).toBe(false);
   });
 
-  test("Removing files", async () => {
+  test('Removing files', async () => {
     // Remove file in diff repo
-    fs.unlinkSync(path.join(repos.DIFF, "file1.txt"));
-    execSync("git add .", { cwd: repos.DIFF });
+    fs.unlinkSync(path.join(repos.DIFF, 'file1.txt'));
+    execSync('git add .', { cwd: repos.DIFF });
     execSync('git commit -m "Remove file1.txt"', { cwd: repos.DIFF });
 
     // Run gitdiff tool
-    execSync("node gitdiff.js " + repos.CONFIG, { cwd: __dirname });
+    execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });
 
     // Verify changes
-    expect(fs.existsSync(path.join(repos.MERGED, "file1.txt"))).toBe(false);
-    expect(fs.existsSync(path.join(repos.BASE, "file1.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(repos.MERGED, 'file1.txt'))).toBe(false);
+    expect(fs.existsSync(path.join(repos.BASE, 'file1.txt'))).toBe(true);
   });
 
-  test("Changing files", async () => {
+  test('Changing files', async () => {
     // Modify file in diff repo
-    fs.writeFileSync(path.join(repos.DIFF, "file1.txt"), "modified content");
-    execSync("git add .", { cwd: repos.DIFF });
+    fs.writeFileSync(path.join(repos.DIFF, 'file1.txt'), 'modified content');
+    execSync('git add .', { cwd: repos.DIFF });
     execSync('git commit -m "Modify file1.txt"', { cwd: repos.DIFF });
 
     // Run gitdiff tool
-    execSync("node gitdiff.js " + repos.CONFIG, { cwd: __dirname });
+    execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });
 
     // Verify changes
-    const baseContent = fs.readFileSync(
-      path.join(repos.BASE, "file1.txt"),
-      "utf8"
-    );
-    const diffContent = fs.readFileSync(
-      path.join(repos.DIFF, "file1.txt"),
-      "utf8"
-    );
-    const mergedContent = fs.readFileSync(
-      path.join(repos.MERGED, "file1.txt"),
-      "utf8"
-    );
+    const baseContent = fs.readFileSync(path.join(repos.BASE, 'file1.txt'), 'utf8');
+    const diffContent = fs.readFileSync(path.join(repos.DIFF, 'file1.txt'), 'utf8');
+    const mergedContent = fs.readFileSync(path.join(repos.MERGED, 'file1.txt'), 'utf8');
 
-    expect(baseContent).toBe("original content");
-    expect(diffContent).toBe("modified content");
-    expect(mergedContent).toBe("modified content");
+    expect(baseContent).toBe('original content');
+    expect(diffContent).toBe('modified content');
+    expect(mergedContent).toBe('modified content');
   });
 });
