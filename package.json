@@ -1,5 +1,5 @@
 {
     "scripts": {
-        "test": "node gitdiff master c:/test/gitvers/base c:/test/gitvers/diff c:/test/gitvers/merged"
+        "test": "node gitdiff c:/test/gitvers/config"
     }
 }
