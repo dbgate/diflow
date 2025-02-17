@@ -2,11 +2,18 @@
 
 Keeps 3 GIT-repos inc sync (Base+Diff=>Merged)
 
-Usage: gitdiff branch1,branch2,branch3 repo1 repo2 repo3
+Usage: gitdiff configrepo
 
-- repo1 = base
-- repo2 = diff
-- repo3 = merged
+In config repo, there should be following config.json:
+
+{
+  "branches": ["master"],
+  "repos": {
+    "repo1": "path_to_base_repo",
+    "repo2": "path_to_diff_repo",
+    "repo3": "path_to_merged_repo"
+  }
+}
 
 1. Process only branches in list
 2. Loop through all commits from all 3 repos, process not processed commits
