@@ -264,7 +264,7 @@ function commitAndPush(repoPath, commitMessage) {
   runGitCommand(repoPath, 'add -A');
   try {
     runGitCommand(repoPath, `commit -m "${commitMessage}"`);
-    runGitCommand(repoPath, 'push');
+    // runGitCommand(repoPath, 'push');
     console.log(`Committed and pushed changes in ${repoPath}`);
   } catch (err) {
     console.error(`Error committing changes in ${repoPath}:`, err);

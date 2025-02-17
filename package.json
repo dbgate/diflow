@@ -1,5 +1,12 @@
 {
+    "name": "gitdiff",
+    "version": "1.0.0",
     "scripts": {
-        "test": "node gitdiff c:/test/gitvers/config"
+        "test": "jest",
+        "test:watch": "jest --watch"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "fs-extra": "^11.2.0"
     }
 }
