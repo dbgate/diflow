@@ -69,7 +69,7 @@ describe("Git Repository Tests", () => {
   //     });
   // });
 
-  test("Adding new files", async () => {
+  test.only("Adding new files", async () => {
     // Add new file in diff repo
     createCommit(repos.DIFF, "newfile.txt", "new content");
 

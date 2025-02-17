@@ -4,6 +4,10 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// console.log(getCommits("c:/jenasoft/dbgate", "master").slice(-3));
+// console.log(getCommits("c:/jenasoft/dbgate", "master").slice(0, 3));
+// process.exit(0);
+
 // ------------------------------
 // Helper: Run a git command in a given directory
 // ------------------------------
@@ -44,7 +48,7 @@ try {
 }
 
 const branches = config.branches; // e.g. ["master", "develop"]
-const reposConfig = config.repos;  // e.g. { "repo1": "url1", "repo2": "url2", "repo3": "url3" }
+const reposConfig = config.repos; // e.g. { "repo1": "url1", "repo2": "url2", "repo3": "url3" }
 
 // Define local paths for each repo (as subdirectories of the state repo)
 const repoPaths = {};
@@ -97,9 +101,7 @@ function saveState(state) {
 }
 
 function isCommitProcessed(state, repo, branch, commitHash) {
-  return state[repo] &&
-         state[repo][branch] &&
-         state[repo][branch].includes(commitHash);
+  return state[repo] && state[repo][branch] && state[repo][branch].includes(commitHash);
 }
 
 function markCommitProcessed(state, repo, branch, commitHash) {
@@ -323,15 +325,12 @@ branches.forEach(branch => {
   // After processing the branch, commit & push changes for each repository.
   for (const repoName in repoPaths) {
     const repoPath = repoPaths[repoName];
-    commitAndPush(
-      repoPath,
-      `CI: Auto commit changes in ${repoName} for branch ${branch}`
-    );
+    commitAndPush(repoPath, `CI: Auto commit changes in ${repoName} for branch ${branch}`);
   }
 });
 
 // Finally, commit and push state repository changes (which include state.json and config.json).
 checkoutBranch(stateRepoPath, branches[0]); // Ensure we are on one of the branches (or adjust as needed)
-commitAndPush(stateRepoPath, "CI: Auto commit state.json and config.json updates");
+commitAndPush(stateRepoPath, 'CI: Auto commit state.json and config.json updates');
 
-console.log("Processing complete.");
+console.log('Processing complete.');
