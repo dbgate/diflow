@@ -182,8 +182,10 @@ class CommitProcessor {
         `commit -m "CI: Auto commit changes in ${repoid} for branch ${this.branchProcessor.branch}"`
       );
       runGitCommand(this.processor.repoPaths[repoid], `push`);
-      const hash = getLastCommitHash(this.processor.repoPaths[repoid]);
-      this.state[repoid][this.branchProcessor.branch].committedByDiflow.push(hash);
+      if (repoid !== 'config') {
+        const hash = getLastCommitHash(this.processor.repoPaths[repoid]);
+        this.state[repoid][this.branchProcessor.branch].committedByDiflow.push(hash);
+      }
     }
   }
 
