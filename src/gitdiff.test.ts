@@ -38,6 +38,9 @@ describe('Git Repository Tests', () => {
         fs.removeSync(path.join(__dirname, name));
       } catch (e) {}
     });
+    try {
+      fs.removeSync(path.join(__dirname, 'repos'));
+    } catch (e) {}
 
     // Create all repositories
     Object.entries(REPOS).forEach(([key, name]) => {
@@ -54,9 +57,9 @@ describe('Git Repository Tests', () => {
       {
         branches: ['master'],
         repos: {
-          repo1: repos.BASE,
-          repo2: repos.DIFF,
-          repo3: repos.MERGED,
+          base: path.join(__dirname, repos.BASE),
+          diff: path.join(__dirname, repos.DIFF),
+          merged: path.join(__dirname, repos.MERGED),
         },
       },
       null,
@@ -67,13 +70,13 @@ describe('Git Repository Tests', () => {
     // Create state.json in config repo
     const stateContent = JSON.stringify(
       {
-        repo1: {
+        base: {
           master: baseHash,
         },
-        repo2: {
+        diff: {
           master: diffHash,
         },
-        repo3: {
+        merged: {
           master: mergedHash,
         },
       },
