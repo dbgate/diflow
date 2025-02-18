@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "yarn build && jest",
     "start": "ts-node gitdiff.ts"
   },
   "devDependencies": {

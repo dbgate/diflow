@@ -24,8 +24,6 @@ export class Processor {
     config: path.join(this.basePath, 'config'),
   };
 
-  stateFilePath = path.join(this.repoPaths.config, 'state.json');
-
   config: Config;
 
   constructor() {
@@ -64,9 +62,10 @@ export class Processor {
   }
 
   loadState(): State {
+    const stateFilePath = path.join(this.repoPaths.config, 'state.json');
     try {
-      if (fs.existsSync(this.stateFilePath)) {
-        return JSON.parse(fs.readFileSync(this.stateFilePath, 'utf8'));
+      if (fs.existsSync(stateFilePath)) {
+        return JSON.parse(fs.readFileSync(stateFilePath, 'utf8'));
       }
     } catch (err) {
       console.error('Error loading state:', err);
@@ -160,6 +159,17 @@ class CommitProcessor {
     }
   }
 
+  saveState() {
+    const stateFilePath = path.join(this.processor.repoPaths.config, 'state.json');
+    try {
+      fs.writeFileSync(stateFilePath, JSON.stringify(this.state, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Error saving state:', err);
+      process.exit(1);
+    }
+  }
+
+
   commitChanges() {
     if (this.commit.repoid !== 'base') {
       this.commitChangesInRepo('base');
@@ -170,6 +180,9 @@ class CommitProcessor {
     if (this.commit.repoid !== 'merged') {
       this.commitChangesInRepo('merged');
     }
+    this.state[this.commit.repoid][this.branchProcessor.branch].lastProcessed = this.commit.commit;
+    this.saveState();
+    this.commitChangesInRepo('config');
 
     // this.state[repoid][this.branchProcessor.branch].committedByDiflow.push(hash);
   }
