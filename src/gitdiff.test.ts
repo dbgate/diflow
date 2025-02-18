@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { execSync } from 'child_process';
+import { rimrafSync } from 'rimraf';
 
 const REPOS = {
   BASE: 'test-base-repo',
@@ -35,11 +36,11 @@ describe('Git Repository Tests', () => {
     // Cleanup repositories
     Object.values(REPOS).forEach(name => {
       try {
-        fs.removeSync(path.join(__dirname, name));
+        rimrafSync(path.join(__dirname, name));
       } catch (e) {}
     });
     try {
-      fs.removeSync(path.join(__dirname, 'repos'));
+      rimrafSync(path.join(__dirname, 'repos'));
     } catch (e) {}
 
     // Create all repositories
