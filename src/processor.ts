@@ -136,6 +136,13 @@ class BranchProcessor {
   }
 
   process() {
+    console.log(
+      `********** Processing branch ${this.branch}, ${this.commitsToProcess.length} commits to process **********`
+    );
+    for (const commit of this.commitsToProcess) {
+      console.log(`${commit.repoid}, ${commit.commit}`);
+    }
+
     for (const commit of this.commitsToProcess) {
       this.processCommit(commit);
     }

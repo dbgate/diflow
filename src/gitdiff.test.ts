@@ -19,10 +19,10 @@ function initRepo(name: string) {
   return repoPath.replaceAll('\\', '/');
 }
 
-function createCommit(repoPath: string, fileName: string, content: string) {
+function createCommit(repoPath: string, fileName: string, content: string, repoid: string) {
   fs.writeFileSync(path.join(repoPath, fileName), content);
   execSync('git add .', { cwd: repoPath });
-  execSync('git commit -m "Initial commit"', { cwd: repoPath });
+  execSync(`git commit -m "Commit into ${repoid}"`, { cwd: repoPath });
 
   const commitHash = execSync('git rev-parse HEAD', { cwd: repoPath }).toString().trim();
   return commitHash;
@@ -48,9 +48,9 @@ describe('Git Repository Tests', () => {
     });
 
     // Setup initial files
-    const baseHash = createCommit(repos.BASE, 'file1.txt', 'original content');
-    const diffHash = createCommit(repos.DIFF, 'file1.txt', 'original content');
-    const mergedHash = createCommit(repos.MERGED, 'file1.txt', 'original content');
+    const baseHash = createCommit(repos.BASE, 'file1.txt', 'original content', 'base');
+    const diffHash = createCommit(repos.DIFF, 'file1.txt', 'original content', 'diff');
+    const mergedHash = createCommit(repos.MERGED, 'file1.txt', 'original content', 'merged');
 
     // Create config.json in config repo
     const configContent = JSON.stringify(
@@ -65,25 +65,25 @@ describe('Git Repository Tests', () => {
       null,
       2
     );
-    createCommit(repos.CONFIG, 'config.json', configContent);
+    createCommit(repos.CONFIG, 'config.json', configContent, 'config');
 
     // Create state.json in config repo
     const stateContent = JSON.stringify(
       {
         base: {
-          master: baseHash,
+          master: { lastProcessed: baseHash },
         },
         diff: {
-          master: diffHash,
+          master: { lastProcessed: diffHash },
         },
         merged: {
-          master: mergedHash,
+          master: { lastProcessed: mergedHash },
         },
       },
       null,
       2
     );
-    createCommit(repos.CONFIG, 'state.json', stateContent);
+    createCommit(repos.CONFIG, 'state.json', stateContent, 'config');
   });
 
   // afterEach(() => {
@@ -95,7 +95,7 @@ describe('Git Repository Tests', () => {
 
   test.only('Adding new files', async () => {
     // Add new file in diff repo
-    createCommit(repos.DIFF, 'newfile.txt', 'new content');
+    createCommit(repos.DIFF, 'newfile.txt', 'new content', 'diff');
 
     // Run gitdiff tool
     execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });

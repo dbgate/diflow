@@ -36,12 +36,12 @@ export function cloneRepository(repoPath: string, url: string) {
 }
 
 export function filterCommitsToProcess(commits: Commit[], state: State, branch: string, repoid: RepoId): Commit[] {
-  const lastCommitIndex = commits.findIndex(x => x.commit === state.branches[branch].lastProcessed);
+  const lastCommitIndex = commits.findIndex(x => x.commit === state[repoid][branch].lastProcessed);
   if (lastCommitIndex < 0) {
     console.log(`Could not find last processed commit for ${branch} in ${repoid}`);
     process.exit(1);
   }
-  return commits.slice(lastCommitIndex + 1).filter(x => !state.branches[branch].committedByDiflow?.includes(x.commit));
+  return commits.slice(lastCommitIndex + 1).filter(x => !state[repoid][branch].committedByDiflow?.includes(x.commit));
 }
 
 // export function getBranchInfo(repoid: RepoId, repoPath: string, branch: string): BranchInfo {
