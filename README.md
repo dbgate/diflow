@@ -1,8 +1,8 @@
-# gitdiff
+# diflow
 
 Keeps 3 GIT-repos inc sync (Base+Diff=>Merged)
 
-Usage: gitdiff configrepo
+Usage: diflow configrepo
 
 In config repo, there should be following config.json:
 

@@ -115,8 +115,8 @@ describe('Git Repository Tests', () => {
 
     beforeDiflow();
 
-    // Run gitdiff tool
-    execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });
+    // Run diflow tool
+    execSync('node diflow.js ' + repos.CONFIG, { cwd: __dirname });
 
     afterDiflow();
 
@@ -134,8 +134,8 @@ describe('Git Repository Tests', () => {
 
     beforeDiflow();
 
-    // Run gitdiff tool
-    execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });
+    // Run diflow tool
+    execSync('node diflow.js ' + repos.CONFIG, { cwd: __dirname });
 
     afterDiflow();
 
@@ -153,8 +153,8 @@ describe('Git Repository Tests', () => {
 
     beforeDiflow();
 
-    // Run gitdiff tool
-    execSync('node gitdiff.js ' + repos.CONFIG, { cwd: __dirname });
+    // Run diflow tool
+    execSync('node diflow.js ' + repos.CONFIG, { cwd: __dirname });
 
     afterDiflow();
 
