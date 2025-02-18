@@ -65,7 +65,28 @@ export class Processor {
     const stateFilePath = path.join(this.repoPaths.config, 'state.json');
     try {
       if (fs.existsSync(stateFilePath)) {
-        return JSON.parse(fs.readFileSync(stateFilePath, 'utf8'));
+        const res: State = JSON.parse(fs.readFileSync(stateFilePath, 'utf8'));
+        for (const branch of this.config.branches) {
+          if (!res['base']?.[branch]?.lastProcessed) {
+            throw new Error(`Missing state for branch ${branch} in base repo`);
+          }
+          if (!res['diff']?.[branch]?.lastProcessed) {
+            throw new Error(`Missing state for branch ${branch} in diff repo`);
+          }
+          if (!res['merged']?.[branch]?.lastProcessed) {
+            throw new Error(`Missing state for branch ${branch} in merged repo`);
+          }
+          if (!res['base']?.[branch]?.committedByDiflow) {
+            res['base'][branch].committedByDiflow = [];
+          }
+          if (!res['diff']?.[branch]?.committedByDiflow) {
+            res['diff'][branch].committedByDiflow = [];
+          }
+          if (!res['merged']?.[branch]?.committedByDiflow) {
+            res['merged'][branch].committedByDiflow = [];
+          }
+        }
+        return res;
       }
     } catch (err) {
       console.error('Error loading state:', err);
@@ -168,7 +189,6 @@ class CommitProcessor {
       process.exit(1);
     }
   }
-
 
   commitChanges() {
     if (this.commit.repoid !== 'base') {

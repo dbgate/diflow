@@ -16,7 +16,7 @@ function initRepo(name: string) {
   // Configure git user for the test
   execSync('git config user.email "test@example.com"', { cwd: repoPath });
   execSync('git config user.name "Test User"', { cwd: repoPath });
-  return repoPath;
+  return repoPath.replaceAll('\\', '/');
 }
 
 function createCommit(repoPath: string, fileName: string, content: string) {
@@ -57,9 +57,9 @@ describe('Git Repository Tests', () => {
       {
         branches: ['master'],
         repos: {
-          base: path.join(__dirname, repos.BASE),
-          diff: path.join(__dirname, repos.DIFF),
-          merged: path.join(__dirname, repos.MERGED),
+          base: repos.BASE,
+          diff: repos.DIFF,
+          merged: repos.MERGED,
         },
       },
       null,
