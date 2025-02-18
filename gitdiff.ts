@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+
 
 // console.log(getCommits('c:/jenasoft/dbgate', 'master').slice(-3));
 // console.log(getCommits('c:/jenasoft/dbgate', 'master').slice(0, 3));
@@ -11,76 +12,16 @@ const path = require('path');
 // ------------------------------
 // Helper: Run a git command in a given directory
 // ------------------------------
-function runGitCommand(repoPath, cmd) {
-  try {
-    return execSync(`git -C "${repoPath}" ${cmd}`, { encoding: 'utf8' });
-  } catch (err) {
-    console.error(`Error running git command in ${repoPath}: ${cmd}\n`, err.message);
-    return '';
-  }
-}
 
 // ------------------------------
 // Check usage
 // ------------------------------
-if (process.argv.length < 3) {
-  console.error('Usage: gitdiff <state-repo-path>');
-  process.exit(1);
-}
-
-const stateRepoPath = path.resolve(process.argv[2]);
-
-// ------------------------------
-// Load configuration from config.json (in the state repository)
-// ------------------------------
-const configPath = path.join(stateRepoPath, 'config.json');
-if (!fs.existsSync(configPath)) {
-  console.error(`Missing configuration file: ${configPath}`);
-  process.exit(1);
-}
-
-let config;
-try {
-  config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-} catch (err) {
-  console.error('Error parsing config.json:', err);
-  process.exit(1);
-}
-
-const branches = config.branches; // e.g. ["master", "develop"]
-const reposConfig = config.repos; // e.g. { "repo1": "url1", "repo2": "url2", "repo3": "url3" }
-
-// Define local paths for each repo (as subdirectories of the state repo)
-const repoPaths = {};
-for (const repoName in reposConfig) {
-  repoPaths[repoName] = path.join(stateRepoPath, repoName);
-}
-
-// ------------------------------
-// Clone repositories if they don't exist
-// ------------------------------
-for (const repoName in reposConfig) {
-  const repoUrl = reposConfig[repoName];
-  const localPath = repoPaths[repoName];
-  if (!fs.existsSync(localPath)) {
-    console.log(`Cloning ${repoName} from ${repoUrl} into ${localPath}`);
-    try {
-      runGitCommand(stateRepoPath, `clone ${repoUrl} ${repoName}`);
-    } catch (err) {
-      console.error(`Failed to clone ${repoName}:`, err);
-      process.exit(1);
-    }
-  } else {
-    console.log(`Repository ${repoName} already exists at ${localPath}`);
-  }
-}
-
 // ------------------------------
 // State tracking
 // ------------------------------
-const stateFilePath = path.join(stateRepoPath, 'state.json');
+const stateFilePath = path.join(repoPaths.config, 'state.json');
 
-function loadState() {
+function loadState(): State {
   try {
     if (fs.existsSync(stateFilePath)) {
       return JSON.parse(fs.readFileSync(stateFilePath, 'utf8'));
@@ -89,11 +30,10 @@ function loadState() {
     console.error('Error loading state:', err);
     process.exit(1);
   }
-  // Structure: { repo1: { branchName: commitHash }, repo2: {...}, repo3: {...} }
-  return { repo1: {}, repo2: {}, repo3: {} };
+  throw new Error('State file not found');
 }
 
-function saveState(state) {
+function saveState(state: State) {
   try {
     fs.writeFileSync(stateFilePath, JSON.stringify(state, null, 2), 'utf8');
   } catch (err) {
@@ -101,11 +41,11 @@ function saveState(state) {
   }
 }
 
-function isCommitProcessed(state, repo, branch, commitHash) {
+function isCommitProcessed(state: State, repo: string, branch: string, commitHash: string) {
   return state[repo] && state[repo][branch] && state[repo][branch].includes(commitHash);
 }
 
-function markCommitProcessed(state, repo, branch, commitHash) {
+function markCommitProcessed(state: State, repo: string, branch: string, commitHash: string) {
   if (!state[repo]) {
     state[repo] = {};
   }
@@ -116,37 +56,7 @@ function markCommitProcessed(state, repo, branch, commitHash) {
   saveState(state);
 }
 
-// ------------------------------
-// Git diff and file operations
-// ------------------------------
-function getCommits(repoPath, branch) {
-  const log = runGitCommand(repoPath, `log ${branch} --pretty=format:"%H|%ct"`);
-  return log
-    .split('\n')
-    .filter(Boolean)
-    .map(x => {
-      const [commit, ts] = x.split('|');
-      return {
-        commit,
-        ts: parseInt(ts),
-      };
-    });
-}
 
-function getDiffForCommit(repoPath, commitHash) {
-  const diffOutput = runGitCommand(repoPath, `show ${commitHash} --name-status`);
-  const changes = [];
-  diffOutput.split('\n').forEach(line => {
-    if (!line.trim()) return;
-    // Expected format: "A<TAB>path/to/file", "D<TAB>path/to/file", etc.
-    const [action, ...fileParts] = line.split('\t');
-    const file = fileParts.join('\t').trim();
-    if (file) {
-      changes.push({ action: action.trim(), file });
-    }
-  });
-  return changes;
-}
 
 function fileExists(repoPath, file) {
   return fs.existsSync(path.join(repoPath, file));
@@ -296,7 +206,6 @@ branches.forEach(branch => {
   const repo1Commits = getCommits(repoPaths.repo1, branch);
   const repo2Commits = getCommits(repoPaths.repo2, branch);
   const repo3Commits = getCommits(repoPaths.repo3, branch);
-
 
   // For each repository, checkout the branch.
   for (const repoName in repoPaths) {

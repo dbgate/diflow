@@ -1,6 +1,6 @@
-const fs = require('fs-extra');
-const path = require('path');
-const { execSync } = require('child_process');
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import { execSync } from 'child_process';
 
 const REPOS = {
   BASE: 'test-base-repo',
@@ -9,7 +9,7 @@ const REPOS = {
   CONFIG: 'test-config-repo',
 };
 
-function initRepo(name) {
+function initRepo(name: string) {
   const repoPath = path.join(__dirname, name);
   fs.ensureDirSync(repoPath);
   execSync('git init', { cwd: repoPath });
@@ -19,7 +19,7 @@ function initRepo(name) {
   return repoPath;
 }
 
-function createCommit(repoPath, fileName, content) {
+function createCommit(repoPath: string, fileName: string, content: string) {
   fs.writeFileSync(path.join(repoPath, fileName), content);
   execSync('git add .', { cwd: repoPath });
   execSync('git commit -m "Initial commit"', { cwd: repoPath });
@@ -29,7 +29,7 @@ function createCommit(repoPath, fileName, content) {
 }
 
 describe('Git Repository Tests', () => {
-  const repos = {};
+  const repos: { [key: string]: string } = {};
 
   beforeEach(() => {
     // Cleanup repositories
