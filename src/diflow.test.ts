@@ -14,6 +14,7 @@ describe('Git Repository Tests', () => {
   });
 
   test('Adding new files', async () => {
+    console.log('BEGIN TEST: Adding new files');
     // Add new file in diff repo
     await createTestCommit(getTestRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
 
@@ -24,6 +25,8 @@ describe('Git Repository Tests', () => {
 
     await afterDiflow();
 
+    console.log('END TEST: Adding new files');
+
     // Verify changes
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'newfile.txt'))).toBe(true);
     expect(await fs.readFile(path.join(getTestRepoPath('merged'), 'newfile.txt'), 'utf8')).toBe('new content');
@@ -31,6 +34,8 @@ describe('Git Repository Tests', () => {
   });
 
   test('Removing files', async () => {
+    console.log('BEGIN TEST: Remove files');
+
     // Remove file in diff repo
     await fs.unlink(path.join(getTestRepoPath('diff'), 'file1.txt'));
     await execAsync('git add .', { cwd: getTestRepoPath('diff') });
@@ -43,6 +48,8 @@ describe('Git Repository Tests', () => {
 
     await afterDiflow();
 
+    console.log('END TEST: Remove files');
+
     // Verify changes
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'file1.txt'))).toBe(true);
     expect(await fs.exists(path.join(getTestRepoPath('base'), 'file1.txt'))).toBe(true);
@@ -50,6 +57,8 @@ describe('Git Repository Tests', () => {
   });
 
   test('Changing files', async () => {
+    console.log('BEGIN TEST: Changing files');
+
     // Modify file in diff repo
     await fs.writeFile(path.join(getTestRepoPath('diff'), 'file1.txt'), 'modified content');
     await execAsync('git add .', { cwd: getTestRepoPath('diff') });
@@ -66,6 +75,8 @@ describe('Git Repository Tests', () => {
     const baseContent = await fs.readFile(path.join(getTestRepoPath('base'), 'file1.txt'), 'utf8');
     const diffContent = await fs.readFile(path.join(getTestRepoPath('diff'), 'file1.txt'), 'utf8');
     const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'file1.txt'), 'utf8');
+
+    console.log('END TEST: Changing files');
 
     expect(baseContent).toBe('base content');
     expect(diffContent).toBe('modified content');
