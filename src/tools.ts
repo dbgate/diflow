@@ -19,7 +19,7 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
 }
 
 export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
-  const log = await runGitCommand(repoPath, `log ${branch} --pretty=format:"%H|%ct"`);
+  const log = await runGitCommand(repoPath, `log ${branch} --reverse --pretty=format:"%H|%ct"`);
   const res = log
     .split('\n')
     .filter(Boolean)
