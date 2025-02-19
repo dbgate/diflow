@@ -1,9 +1,5 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { exec } from 'child_process';
-import { rm } from 'fs/promises';
-import { promisify } from 'util';
-import { rimraf } from 'rimraf';
 import { afterDiflow, beforeDiflow, createTestCommit, getTestRepoPath, initTestRepos } from './testrepo';
 import { Processor } from './processor';
 import { execAsync } from './tools';
@@ -25,12 +21,16 @@ describe('Git Repository Tests', () => {
 
     await afterDiflow();
 
+    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'newfile.txt'));	
+    const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'newfile.txt'), 'utf8');
+    const baseExists = await fs.exists(path.join(getTestRepoPath('base'), 'newfile.txt'));
+
     console.log('END TEST: Adding new files');
 
     // Verify changes
-    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'newfile.txt'))).toBe(true);
-    expect(await fs.readFile(path.join(getTestRepoPath('merged'), 'newfile.txt'), 'utf8')).toBe('new content');
-    expect(await fs.exists(path.join(getTestRepoPath('base'), 'newfile.txt'))).toBe(false);
+    expect(mergedExists).toBe(true);
+    expect(mergedContent).toBe('new content');
+    expect(baseExists).toBe(false);
   });
 
   test('Removing files', async () => {
@@ -48,12 +48,16 @@ describe('Git Repository Tests', () => {
 
     await afterDiflow();
 
+    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'file1.txt'));
+    const baseExists = await fs.exists(path.join(getTestRepoPath('base'), 'file1.txt'));
+    const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'file1.txt'), 'utf8');
+
     console.log('END TEST: Remove files');
 
     // Verify changes
-    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'file1.txt'))).toBe(true);
-    expect(await fs.exists(path.join(getTestRepoPath('base'), 'file1.txt'))).toBe(true);
-    expect(await fs.readFile(path.join(getTestRepoPath('merged'), 'file1.txt'), 'utf8')).toBe('base content');
+    expect(mergedExists).toBe(true);
+    expect(baseExists).toBe(true);
+    expect(mergedContent).toBe('base content');
   });
 
   test('Changing files', async () => {

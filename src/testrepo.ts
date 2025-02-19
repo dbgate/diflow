@@ -1,8 +1,5 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { exec } from 'child_process';
-import { rm } from 'fs/promises';
-import { promisify } from 'util';
 import { rimraf } from 'rimraf';
 import { execAsync } from './tools';
 
@@ -22,6 +19,7 @@ export async function initTestRepo(name: string) {
 }
 
 export async function createTestCommit(repoPath: string, fileName: string, content: string, repoid: string) {
+  console.log('Creating commit:', repoPath, ',file:', fileName, ',content:', content);
   await fs.writeFile(path.join(repoPath, fileName), content);
   await execAsync('git add .', { cwd: repoPath });
   await execAsync(`git commit -m "Commit into ${repoid}"`, { cwd: repoPath });
