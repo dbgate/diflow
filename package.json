@@ -18,8 +18,5 @@
   },
   "dependencies": {
     "rimraf": "5"
-  },
-  "resolutions": {
-    "string-width": "4.2.0"
   }
 }
