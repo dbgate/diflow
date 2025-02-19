@@ -8,7 +8,9 @@ const execAsync = promisify(exec);
 
 export async function runGitCommand(repoPath: string, cmd: string): Promise<string> {
   try {
+    // console.log('Running GIT COMMAND:', repoPath, cmd);
     const { stdout } = await execAsync(`git -C "${repoPath}" ${cmd}`);
+    // console.log('RESULT:', stdout);
     return stdout;
   } catch (err: any) {
     console.error(`Error running git command in ${repoPath}: ${cmd}\n`, err.message);
@@ -33,7 +35,7 @@ export async function getCommits(repoPath: string, branch: string): Promise<Comm
 }
 
 export async function cloneRepository(repoPath: string, url: string) {
-  if (!await fs.exists(repoPath)) {
+  if (!(await fs.exists(repoPath))) {
     console.log(`Cloning from ${url} into ${repoPath}`);
     await execAsync(`git clone ${url} ${repoPath}`);
   }

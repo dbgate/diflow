@@ -3,6 +3,7 @@ import * as path from 'path';
 import { exec } from 'child_process';
 import { rm } from 'fs/promises';
 import { promisify } from 'util';
+import { rimraf } from 'rimraf';
 
 const execAsync = promisify(exec);
 
@@ -33,10 +34,12 @@ describe('Git Repository Tests', () => {
   beforeEach(async () => {
     // Cleanup repositories
     try {
-      await rm(path.join(__dirname, 'repos'), { recursive: true, force: true });
+      await rimraf(path.join(__dirname, 'repos'));
+      // await rm(path.join(__dirname, 'repos'), { recursive: true, force: true });
     } catch (e) {}
     try {
-      await rm(path.join(__dirname, 'testrepos'), { recursive: true, force: true });
+      await rimraf(path.join(__dirname, 'testrepos'));
+      // await rm(path.join(__dirname, 'testrepos'), { recursive: true, force: true });
     } catch (e) {}
 
     await initRepo('config');
@@ -89,15 +92,17 @@ describe('Git Repository Tests', () => {
     await createCommit(getRepoPath('config'), 'state.json', stateContent, 'config');
   });
 
-  afterEach(async () => {
-    // Cleanup repositories
-    try {
-      await rm(path.join(__dirname, 'repos'), { recursive: true, force: true });
-    } catch (e) {}
-    try {
-      await rm(path.join(__dirname, 'testrepos'), { recursive: true, force: true });
-    } catch (e) {}
-  });
+  // afterEach(async () => {
+  //   // Cleanup repositories
+  //   try {
+  //     await rimraf(path.join(__dirname, 'repos'));
+  //     // await rm(path.join(__dirname, 'repos'), { recursive: true, force: true });
+  //   } catch (e) {}
+  //   try {
+  //     await rimraf(path.join(__dirname, 'testrepos'));
+  //     // await rm(path.join(__dirname, 'testrepos'), { recursive: true, force: true });
+  //   } catch (e) {}
+  // });
 
   async function beforeDiflow() {
     await execAsync('git checkout -b tmp', { cwd: getRepoPath('merged') });
@@ -111,7 +116,7 @@ describe('Git Repository Tests', () => {
     await execAsync('git checkout master', { cwd: getRepoPath('diff') });
   }
 
-  test.only('Adding new files', async () => {
+  test('Adding new files', async () => {
     // Add new file in diff repo
     await createCommit(getRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
 
