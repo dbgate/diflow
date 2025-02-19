@@ -2,7 +2,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { afterDiflow, beforeDiflow, createTestCommit, getTestRepoPath, initTestRepos } from './testrepo';
 import { Processor } from './processor';
-import { execAsync } from './tools';
+import { execAsync, sleep } from './tools';
 
 describe('Git Repository Tests', () => {
   beforeEach(async () => {
@@ -17,11 +17,13 @@ describe('Git Repository Tests', () => {
     await beforeDiflow();
 
     const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    console.log('BEGIN PROCESSOR: Adding new files');
     await processor.process();
+    console.log('END PROCESSOR: Adding new files');
 
     await afterDiflow();
 
-    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'newfile.txt'));	
+    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'newfile.txt'));
     const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'newfile.txt'), 'utf8');
     const baseExists = await fs.exists(path.join(getTestRepoPath('base'), 'newfile.txt'));
 
@@ -44,7 +46,9 @@ describe('Git Repository Tests', () => {
     await beforeDiflow();
 
     const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    console.log('BEGIN PROCESSOR: Removing files');
     await processor.process();
+    console.log('END PROCESSOR: Removing files');
 
     await afterDiflow();
 
@@ -71,7 +75,9 @@ describe('Git Repository Tests', () => {
     await beforeDiflow();
 
     const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    console.log('BEGIN PROCESSOR: Changing files');
     await processor.process();
+    console.log('END PROCESSOR: Changing files');
 
     await afterDiflow();
 
