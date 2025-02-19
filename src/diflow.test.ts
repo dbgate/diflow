@@ -11,6 +11,9 @@ describe('Git Repository Tests', () => {
 
   test('Adding new files', async () => {
     console.log('BEGIN TEST: Adding new files');
+
+    await sleep(2000);
+
     // Add new file in diff repo
     await createTestCommit(getTestRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
 
@@ -38,6 +41,7 @@ describe('Git Repository Tests', () => {
   test('Removing files', async () => {
     console.log('BEGIN TEST: Remove files');
 
+    await sleep(2000);
     // Remove file in diff repo
     await fs.unlink(path.join(getTestRepoPath('diff'), 'file1.txt'));
     await execAsync('git add .', { cwd: getTestRepoPath('diff') });
@@ -66,6 +70,8 @@ describe('Git Repository Tests', () => {
 
   test('Changing files', async () => {
     console.log('BEGIN TEST: Changing files');
+
+    await sleep(2000);
 
     // Modify file in diff repo
     await fs.writeFile(path.join(getTestRepoPath('diff'), 'file1.txt'), 'modified content');

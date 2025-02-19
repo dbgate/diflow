@@ -134,6 +134,7 @@ class BranchProcessor {
     ];
     this.commitsToProcess.sort((a, b) => a.ts - b.ts);
     console.log('Initializing branch:', this.branch, 'DONE');
+    console.log('Commits to process:', this.commitsToProcess.length);
   }
 
   async process() {
