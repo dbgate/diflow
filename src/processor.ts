@@ -188,7 +188,7 @@ class CommitProcessor {
     console.log('Processing files from commit:', files.length);
 
     for (const file of files) {
-      if ((this.processor.config?.ignorePaths ?? []).find(ignore => minimatch(file.file, ignore))) {
+      if ((this.processor.config?.ignorePaths ?? []).find(ignore => minimatch(file.file, ignore, { partial: true }))) {
         continue;
       }
       if (this.commit.repoid === 'base') {
