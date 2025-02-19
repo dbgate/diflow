@@ -7,8 +7,9 @@ if (process.argv.length < 3) {
 }
 
 const skipPush = process.argv.includes('--skip-push');
+const clear = process.argv.includes('--clear');
 
-const processor = new Processor(process.argv[2], path.join(__dirname, 'repos'), { skipPush });
+const processor = new Processor(process.argv[2], path.join(__dirname, 'workrepos'), { skipPush, clear });
 processor.process();
 
 console.log('Processing complete.');

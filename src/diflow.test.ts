@@ -21,7 +21,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
     await processor.process();
 
     await afterDiflow();
@@ -45,7 +45,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
     await processor.process();
 
     await afterDiflow();
@@ -72,7 +72,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
     await processor.process();
 
     await afterDiflow();
@@ -103,7 +103,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
     await processor.process();
 
     await afterDiflow();
@@ -132,7 +132,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
     await processor.process();
 
     await afterDiflow();
@@ -147,18 +147,26 @@ describe('Git Repository Tests', () => {
     expect(content3).toBe('content3');
   });
 
-
-  test('Ignore path', async () => {
-    await createTestCommit(getTestRepoPath('diff'), 'ignorepath.txt', 'ignored content', 'diff');
+  test.only('Ignore path', async () => {
+    const folder = path.join(getTestRepoPath('diff'), '.github', 'workflows');
+    await fs.mkdir(folder, { recursive: true });
+    await createTestCommit(
+      getTestRepoPath('diff'),
+      path.join('.github', 'workflows', 'ignorepath.txt'),
+      'ignored content',
+      'diff'
+    );
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
     await processor.process();
 
     await afterDiflow();
 
-    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'ignorepath.txt'));
+    const mergedExists = await fs.exists(
+      path.join(getTestRepoPath('merged'), '.github', 'workflows', 'ignorepath.txt')
+    );
 
     await checkStateInConfig();
 

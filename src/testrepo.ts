@@ -32,8 +32,8 @@ export async function createTestCommit(repoPath: string, fileName: string, conte
 export async function initTestRepos() {
   // Cleanup repositories
   try {
-    await rimraf(path.join(__dirname, 'repos'));
-    // await rm(path.join(__dirname, 'repos'), { recursive: true, force: true });
+    await rimraf(path.join(__dirname, 'workrepos'));
+    // await rm(path.join(__dirname, 'workrepos'), { recursive: true, force: true });
   } catch (e) {}
   try {
     await rimraf(path.join(__dirname, 'testrepos'));
@@ -59,7 +59,7 @@ export async function initTestRepos() {
         diff: getTestRepoPath('diff'),
         merged: getTestRepoPath('merged'),
       },
-      ignorePaths: ['ignore*.txt'],
+      ignorePaths: ['.github/**'],
     },
     null,
     2

@@ -14,9 +14,11 @@ import {
 } from './tools';
 import { ChangeItem, Config, RepoId, State } from './types';
 import { minimatch } from 'minimatch';
+import { rimraf } from 'rimraf';
 
 export interface ProcessOptions {
   skipPush?: boolean;
+  clear?: boolean;
 }
 
 export class Processor {
@@ -34,6 +36,14 @@ export class Processor {
   }
 
   async initialize() {
+    if (this.processOptions.clear) {
+      try {
+        await rimraf(this.basePath);
+      } catch (e) {
+        // ignore
+      }
+    }
+
     if (!(await fs.exists(this.basePath))) {
       await fs.mkdir(this.basePath);
     }

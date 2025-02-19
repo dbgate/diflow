@@ -10,7 +10,7 @@ async function main() {
       break;
     case 'add':
       await createTestCommit(getTestRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
-      const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+      const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
       await processor.process();
       break;
   }
