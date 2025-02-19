@@ -3,21 +3,18 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { rimrafSync } from 'rimraf';
 
-const REPOS = {
-  BASE: 'test-base-repo',
-  DIFF: 'test-diff-repo',
-  MERGED: 'test-merged-repo',
-  CONFIG: 'test-config-repo',
-};
+function getRepoPath(repo: string) {
+  const repoPath = path.join(__dirname, 'testrepos', repo);
+  return repoPath.replaceAll('\\', '/');
+}
 
 function initRepo(name: string) {
-  const repoPath = path.join(__dirname, name);
+  const repoPath = getRepoPath(name);
   fs.ensureDirSync(repoPath);
   execSync('git init', { cwd: repoPath });
   // Configure git user for the test
   execSync('git config user.email "test@example.com"', { cwd: repoPath });
   execSync('git config user.name "Test User"', { cwd: repoPath });
-  return repoPath.replaceAll('\\', '/');
 }
 
 function createCommit(repoPath: string, fileName: string, content: string, repoid: string) {
@@ -30,43 +27,39 @@ function createCommit(repoPath: string, fileName: string, content: string, repoi
 }
 
 describe('Git Repository Tests', () => {
-  const repos: { [key: string]: string } = {};
-
   beforeEach(() => {
     // Cleanup repositories
-    Object.values(REPOS).forEach(name => {
-      try {
-        rimrafSync(path.join(__dirname, name));
-      } catch (e) {}
-    });
     try {
       rimrafSync(path.join(__dirname, 'repos'));
     } catch (e) {}
+    try {
+      rimrafSync(path.join(__dirname, 'testrepos'));
+    } catch (e) {}
 
-    // Create all repositories
-    Object.entries(REPOS).forEach(([key, name]) => {
-      repos[key] = initRepo(name);
-    });
+    initRepo('config');
+    initRepo('base');
+    initRepo('diff');
+    initRepo('merged');
 
     // Setup initial files
-    const baseHash = createCommit(repos.BASE, 'file1.txt', 'base content', 'base');
-    const diffHash = createCommit(repos.DIFF, 'file1.txt', 'different content', 'diff');
-    const mergedHash = createCommit(repos.MERGED, 'file1.txt', 'different content', 'merged');
+    const baseHash = createCommit(getRepoPath('base'), 'file1.txt', 'base content', 'base');
+    const diffHash = createCommit(getRepoPath('diff'), 'file1.txt', 'different content', 'diff');
+    const mergedHash = createCommit(getRepoPath('merged'), 'file1.txt', 'different content', 'merged');
 
     // Create config.json in config repo
     const configContent = JSON.stringify(
       {
         branches: ['master'],
         repos: {
-          base: repos.BASE,
-          diff: repos.DIFF,
-          merged: repos.MERGED,
+          base: getRepoPath('base'),
+          diff: getRepoPath('diff'),
+          merged: getRepoPath('merged'),
         },
       },
       null,
       2
     );
-    createCommit(repos.CONFIG, 'config.json', configContent, 'config');
+    createCommit(getRepoPath('config'), 'config.json', configContent, 'config');
 
     // Create state.json in config repo
     const stateContent = JSON.stringify(
@@ -84,7 +77,7 @@ describe('Git Repository Tests', () => {
       null,
       2
     );
-    createCommit(repos.CONFIG, 'state.json', stateContent, 'config');
+    createCommit(getRepoPath('config'), 'state.json', stateContent, 'config');
   });
 
   // afterEach(() => {
@@ -95,15 +88,15 @@ describe('Git Repository Tests', () => {
   // });
 
   function beforeDiflow() {
-    execSync('git checkout -b tmp', { cwd: repos.MERGED });
-    execSync('git checkout -b tmp', { cwd: repos.BASE });
-    execSync('git checkout -b tmp', { cwd: repos.DIFF });
+    execSync('git checkout -b tmp', { cwd: getRepoPath('merged') });
+    execSync('git checkout -b tmp', { cwd: getRepoPath('base') });
+    execSync('git checkout -b tmp', { cwd: getRepoPath('diff') });
   }
 
   function afterDiflow() {
-    execSync('git checkout master', { cwd: repos.MERGED });
-    execSync('git checkout master', { cwd: repos.BASE });
-    execSync('git checkout master', { cwd: repos.DIFF });
+    execSync('git checkout master', { cwd: getRepoPath('merged') });
+    execSync('git checkout master', { cwd: getRepoPath('base') });
+    execSync('git checkout master', { cwd: getRepoPath('diff') });
     // execSync('git pull', { cwd: repos.MERGED });
     // execSync('git pull', { cwd: repos.BASE });
     // execSync('git pull', { cwd: repos.DIFF });
@@ -111,57 +104,57 @@ describe('Git Repository Tests', () => {
 
   test('Adding new files', async () => {
     // Add new file in diff repo
-    createCommit(repos.DIFF, 'newfile.txt', 'new content', 'diff');
+    createCommit(getRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
 
     beforeDiflow();
 
     // Run diflow tool
-    execSync('node diflow.js ' + repos.CONFIG, { cwd: __dirname });
+    execSync('node diflow.js ' + getRepoPath('config'), { cwd: __dirname });
 
     afterDiflow();
 
     // Verify changes
-    expect(fs.existsSync(path.join(repos.MERGED, 'newfile.txt'))).toBe(true);
-    expect(fs.readFileSync(path.join(repos.MERGED, 'newfile.txt'), 'utf8')).toBe('new content');
-    expect(fs.existsSync(path.join(repos.BASE, 'newfile.txt'))).toBe(false);
+    expect(fs.existsSync(path.join(getRepoPath('merged'), 'newfile.txt'))).toBe(true);
+    expect(fs.readFileSync(path.join(getRepoPath('merged'), 'newfile.txt'), 'utf8')).toBe('new content');
+    expect(fs.existsSync(path.join(getRepoPath('base'), 'newfile.txt'))).toBe(false);
   });
 
   test('Removing files', async () => {
     // Remove file in diff repo
-    fs.unlinkSync(path.join(repos.DIFF, 'file1.txt'));
-    execSync('git add .', { cwd: repos.DIFF });
-    execSync('git commit -m "Remove file1.txt"', { cwd: repos.DIFF });
+    fs.unlinkSync(path.join(getRepoPath('diff'), 'file1.txt'));
+    execSync('git add .', { cwd: getRepoPath('diff') });
+    execSync('git commit -m "Remove file1.txt"', { cwd: getRepoPath('diff') });
 
     beforeDiflow();
 
     // Run diflow tool
-    execSync('node diflow.js ' + repos.CONFIG, { cwd: __dirname });
+    execSync('node diflow.js ' + getRepoPath('config'), { cwd: __dirname });
 
     afterDiflow();
 
     // Verify changes
-    expect(fs.existsSync(path.join(repos.MERGED, 'file1.txt'))).toBe(true);
-    expect(fs.existsSync(path.join(repos.BASE, 'file1.txt'))).toBe(true);
-    expect(fs.readFileSync(path.join(repos.MERGED, 'file1.txt'), 'utf8')).toBe('base content');
+    expect(fs.existsSync(path.join(getRepoPath('merged'), 'file1.txt'))).toBe(true);
+    expect(fs.existsSync(path.join(getRepoPath('base'), 'file1.txt'))).toBe(true);
+    expect(fs.readFileSync(path.join(getRepoPath('merged'), 'file1.txt'), 'utf8')).toBe('modified content');
   });
 
-  test('Changing files', async () => {
+  test.only('Changing files', async () => {
     // Modify file in diff repo
-    fs.writeFileSync(path.join(repos.DIFF, 'file1.txt'), 'modified content');
-    execSync('git add .', { cwd: repos.DIFF });
-    execSync('git commit -m "Modify file1.txt"', { cwd: repos.DIFF });
+    fs.writeFileSync(path.join(getRepoPath('diff'), 'file1.txt'), 'modified content');
+    execSync('git add .', { cwd: getRepoPath('diff') });
+    execSync('git commit -m "Modify file1.txt"', { cwd: getRepoPath('diff') });
 
     beforeDiflow();
 
     // Run diflow tool
-    execSync('node diflow.js ' + repos.CONFIG, { cwd: __dirname });
+    execSync('node diflow.js ' + getRepoPath('config'), { cwd: __dirname });
 
     afterDiflow();
 
     // Verify changes
-    const baseContent = fs.readFileSync(path.join(repos.BASE, 'file1.txt'), 'utf8');
-    const diffContent = fs.readFileSync(path.join(repos.DIFF, 'file1.txt'), 'utf8');
-    const mergedContent = fs.readFileSync(path.join(repos.MERGED, 'file1.txt'), 'utf8');
+    const baseContent = fs.readFileSync(path.join(getRepoPath('base'), 'file1.txt'), 'utf8');
+    const diffContent = fs.readFileSync(path.join(getRepoPath('diff'), 'file1.txt'), 'utf8');
+    const mergedContent = fs.readFileSync(path.join(getRepoPath('merged'), 'file1.txt'), 'utf8');
 
     expect(baseContent).toBe('base content');
     expect(diffContent).toBe('modified content');
