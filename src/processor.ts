@@ -230,7 +230,8 @@ class CommitProcessor {
       await runGitCommand(this.processor.repoPaths[repoid], `push`);
       if (repoid !== 'config') {
         const hash = await getLastCommitHash(this.processor.repoPaths[repoid]);
-        this.state![repoid][this.branchProcessor.branch].committedByDiflow.push(hash);
+        this.state![repoid][this.branchProcessor.branch].lastProcessed = hash;
+        // this.state![repoid][this.branchProcessor.branch].committedByDiflow.push(hash);
       }
       console.log('Commiting changes for repo:', repoid, 'DONE.');
     }

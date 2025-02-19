@@ -110,17 +110,17 @@ export async function afterDiflow() {
 }
 
 export async function checkStateInConfig() {
-  // const stateContent = await fs.readFile(path.join(getTestRepoPath('config'), 'state.json'), 'utf8');
-  // const state = JSON.parse(stateContent) as State;
-  // const baseHash = await getHeadCommitInRepo(getTestRepoPath('base'));
-  // const diffHash = await getHeadCommitInRepo(getTestRepoPath('diff'));
-  // const mergedHash = await getHeadCommitInRepo(getTestRepoPath('merged'));
+  const stateContent = await fs.readFile(path.join(getTestRepoPath('config'), 'state.json'), 'utf8');
+  const state = JSON.parse(stateContent) as State;
+  const baseHash = await getHeadCommitInRepo(getTestRepoPath('base'));
+  const diffHash = await getHeadCommitInRepo(getTestRepoPath('diff'));
+  const mergedHash = await getHeadCommitInRepo(getTestRepoPath('merged'));
 
-  // expect(state['base']['master'].lastProcessed).toBe(baseHash);
-  // expect(state['diff']['master'].lastProcessed).toBe(diffHash);
-  // expect(state['merged']['master'].lastProcessed).toBe(mergedHash);
+  expect(state['base']['master'].lastProcessed).toBe(baseHash);
+  expect(state['diff']['master'].lastProcessed).toBe(diffHash);
+  expect(state['merged']['master'].lastProcessed).toBe(mergedHash);
 
-  // expect(state['base']['master'].committedByDiflow).toBe([]);
-  // expect(state['diff']['master'].committedByDiflow).toBe([]);
-  // expect(state['merged']['master'].committedByDiflow).toBe([]);
+  expect(state['base']['master'].committedByDiflow).toEqual([]);
+  expect(state['diff']['master'].committedByDiflow).toEqual([]);
+  expect(state['merged']['master'].committedByDiflow).toEqual([]);
 }
