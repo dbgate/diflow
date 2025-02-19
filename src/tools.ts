@@ -1,19 +1,23 @@
-import { execSync } from 'child_process';
-import * as fs from 'fs';
+import { exec } from 'child_process';
+import * as fs from 'fs-extra';
 import * as path from 'path';
+import { promisify } from 'util';
 import { ChangeItem, Commit, FileAction, RepoId, State } from './types';
 
-export function runGitCommand(repoPath: string, cmd: string): string {
+const execAsync = promisify(exec);
+
+export async function runGitCommand(repoPath: string, cmd: string): Promise<string> {
   try {
-    return execSync(`git -C "${repoPath}" ${cmd}`, { encoding: 'utf8' });
+    const { stdout } = await execAsync(`git -C "${repoPath}" ${cmd}`);
+    return stdout;
   } catch (err: any) {
     console.error(`Error running git command in ${repoPath}: ${cmd}\n`, err.message);
     return '';
   }
 }
 
-export function getCommits(repoPath: string, branch: string): Commit[] {
-  const log = runGitCommand(repoPath, `log ${branch} --pretty=format:"%H|%ct"`);
+export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
+  const log = await runGitCommand(repoPath, `log ${branch} --pretty=format:"%H|%ct"`);
   const res = log
     .split('\n')
     .filter(Boolean)
@@ -28,10 +32,10 @@ export function getCommits(repoPath: string, branch: string): Commit[] {
   return res;
 }
 
-export function cloneRepository(repoPath: string, url: string) {
-  if (!fs.existsSync(repoPath)) {
+export async function cloneRepository(repoPath: string, url: string) {
+  if (!await fs.exists(repoPath)) {
     console.log(`Cloning from ${url} into ${repoPath}`);
-    execSync(`git clone ${url} ${repoPath}`, { encoding: 'utf8' });
+    await execAsync(`git clone ${url} ${repoPath}`);
   }
 }
 
@@ -44,59 +48,45 @@ export function filterCommitsToProcess(commits: Commit[], state: State, branch: 
   return commits.slice(lastCommitIndex + 1).filter(x => !state[repoid][branch].committedByDiflow?.includes(x.commit));
 }
 
-// export function getBranchInfo(repoid: RepoId, repoPath: string, branch: string): BranchInfo {
-//   const commits = getCommits(repoid, repoPath, branch);
-//   return {
-//     repoid,
-//     branch,
-//     commits,
-//     state: BranchState.Unknown,
-//   };
-// }
-
-export function getDiffForCommit(repoPath: string, commitHash: string): ChangeItem[] {
-  const diffOutput = runGitCommand(repoPath, `show ${commitHash} --name-status`);
-  const changes: ChangeItem[] = [];
-  diffOutput.split('\n').forEach(line => {
-    if (!line.trim()) return;
-    // Expected format: "A<TAB>path/to/file", "D<TAB>path/to/file", etc.
-    const [action, ...fileParts] = line.split('\t');
-    const file = fileParts.join('\t').trim();
-    if (file) {
-      changes.push({ action: action.trim() as FileAction, file });
-    }
-  });
-  return changes;
+export async function getDiffForCommit(repoPath: string, commitHash: string): Promise<ChangeItem[]> {
+  const diff = await runGitCommand(repoPath, `show --name-status ${commitHash}`);
+  return diff
+    .split('\n')
+    .filter(x => x.match(/^[AMD]\t/))
+    .map(x => {
+      const [action, file] = x.split('\t');
+      return {
+        action: action as FileAction,
+        file,
+      };
+    });
 }
 
-export function copyRepoFile(srcRepo: string, destRepo: string, file: string) {
+export async function copyRepoFile(srcRepo: string, destRepo: string, file: string) {
   const srcPath = path.join(srcRepo, file);
   const destPath = path.join(destRepo, file);
-  if (!fs.existsSync(srcPath)) {
-    console.warn(`Source file does not exist: ${srcPath}`);
-    return;
-  }
-  fs.mkdirSync(path.dirname(destPath), { recursive: true });
-  fs.copyFileSync(srcPath, destPath);
+  await fs.ensureDir(path.dirname(destPath));
+  await fs.copyFile(srcPath, destPath);
   console.log(`Copied ${file} from ${srcRepo} to ${destRepo}`);
 }
 
-export function removeRepoFile(repoPath: string, file: string) {
+export async function removeRepoFile(repoPath: string, file: string) {
   const filePath = path.join(repoPath, file);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+  if (await fs.exists(filePath)) {
+    await fs.unlink(filePath);
     console.log(`Removed ${file} from ${repoPath}`);
   }
 }
 
-export function repoFileExists(repoPath: string, file: string) {
-  return fs.existsSync(path.join(repoPath, file));
+export async function repoFileExists(repoPath: string, file: string): Promise<boolean> {
+  return await fs.exists(path.join(repoPath, file));
 }
 
-export function repoHasModifications(repoPath: string) {
-  return runGitCommand(repoPath, 'status --porcelain').trim() !== '';
+export async function repoHasModifications(repoPath: string): Promise<boolean> {
+  const status = await runGitCommand(repoPath, 'status --porcelain');
+  return status.length > 0;
 }
 
-export function getLastCommitHash(repoPath: string) {
-  return execSync('git rev-parse HEAD', { cwd: repoPath }).toString().trim();
+export async function getLastCommitHash(repoPath: string): Promise<string> {
+  return (await runGitCommand(repoPath, 'rev-parse HEAD')).trim();
 }
