@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "build": "tsc",
-    "test": "yarn build && jest",
+    "test": "yarn build && jest --runInBand",
+    "test:ci": "jest --runInBand --json --outputFile=test-result.json --testLocationInResults --detectOpenHandles --forceExit",
     "start": "ts-node gitdiff.ts"
   },
   "devDependencies": {
