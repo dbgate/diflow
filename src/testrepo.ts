@@ -102,6 +102,6 @@ export async function afterDiflow() {
   await execAsync('git checkout master', { cwd: getTestRepoPath('merged') });
   await execAsync('git checkout master', { cwd: getTestRepoPath('base') });
   await execAsync('git checkout master', { cwd: getTestRepoPath('diff') });
-  sleep(1000);
+  await sleep(1000);
   console.log('Checked out master branch')
 }
