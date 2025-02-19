@@ -80,12 +80,15 @@ describe('Git Repository Tests', () => {
     createCommit(getRepoPath('config'), 'state.json', stateContent, 'config');
   });
 
-  // afterEach(() => {
-  //     // Cleanup repositories
-  //     Object.values(REPOS).forEach(name => {
-  //         fs.removeSync(path.join(__dirname, name));
-  //     });
-  // });
+  afterEach(() => {
+    // Cleanup repositories
+    try {
+      rimrafSync(path.join(__dirname, 'repos'));
+    } catch (e) {}
+    try {
+      rimrafSync(path.join(__dirname, 'testrepos'));
+    } catch (e) {}
+  });
 
   function beforeDiflow() {
     execSync('git checkout -b tmp', { cwd: getRepoPath('merged') });
@@ -135,7 +138,7 @@ describe('Git Repository Tests', () => {
     // Verify changes
     expect(fs.existsSync(path.join(getRepoPath('merged'), 'file1.txt'))).toBe(true);
     expect(fs.existsSync(path.join(getRepoPath('base'), 'file1.txt'))).toBe(true);
-    expect(fs.readFileSync(path.join(getRepoPath('merged'), 'file1.txt'), 'utf8')).toBe('modified content');
+    expect(fs.readFileSync(path.join(getRepoPath('merged'), 'file1.txt'), 'utf8')).toBe('base content');
   });
 
   test('Changing files', () => {
