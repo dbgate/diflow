@@ -1,7 +1,8 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { rimraf } from 'rimraf';
-import { execAsync, sleep } from './tools';
+import { execAsync, getHeadCommitInRepo, sleep } from './tools';
+import { State } from './types';
 
 export function getTestRepoPath(repo: string) {
   const repoPath = path.join(__dirname, 'testrepos', repo);
@@ -90,18 +91,36 @@ export async function initTestRepos() {
 }
 
 export async function beforeDiflow() {
-  console.log('Checking out new tmp branch')
+  console.log('Checking out new tmp branch');
   await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('merged') });
   await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('base') });
   await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('diff') });
-  console.log('Checked out new tmp branch')
+  await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('config') });
+  console.log('Checked out new tmp branch');
 }
 
 export async function afterDiflow() {
-  console.log('Checking out master branch')
+  console.log('Checking out master branch');
   await execAsync('git checkout master', { cwd: getTestRepoPath('merged') });
   await execAsync('git checkout master', { cwd: getTestRepoPath('base') });
   await execAsync('git checkout master', { cwd: getTestRepoPath('diff') });
+  await execAsync('git checkout master', { cwd: getTestRepoPath('config') });
   // await sleep(1000);
-  console.log('Checked out master branch')
+  console.log('Checked out master branch');
+}
+
+export async function checkStateInConfig() {
+  // const stateContent = await fs.readFile(path.join(getTestRepoPath('config'), 'state.json'), 'utf8');
+  // const state = JSON.parse(stateContent) as State;
+  // const baseHash = await getHeadCommitInRepo(getTestRepoPath('base'));
+  // const diffHash = await getHeadCommitInRepo(getTestRepoPath('diff'));
+  // const mergedHash = await getHeadCommitInRepo(getTestRepoPath('merged'));
+
+  // expect(state['base']['master'].lastProcessed).toBe(baseHash);
+  // expect(state['diff']['master'].lastProcessed).toBe(diffHash);
+  // expect(state['merged']['master'].lastProcessed).toBe(mergedHash);
+
+  // expect(state['base']['master'].committedByDiflow).toBe([]);
+  // expect(state['diff']['master'].committedByDiflow).toBe([]);
+  // expect(state['merged']['master'].committedByDiflow).toBe([]);
 }

@@ -36,6 +36,7 @@ export class Processor {
     }
 
     await cloneRepository(this.repoPaths.config, this.configRepoUrl);
+    await runGitCommand(this.repoPaths.config, 'checkout master');
 
     const configPath = path.join(this.repoPaths.config, 'config.json');
     if (!(await fs.exists(configPath))) {
@@ -246,25 +247,20 @@ class CommitProcessor {
       await this.commitChangesInRepo('merged');
     }
     this.state![this.commit.repoid][this.branchProcessor.branch].lastProcessed = this.commit.commit;
+
     await this.saveState();
+
     await this.commitChangesInRepo('config');
   }
 
   async saveState() {
-    this.state![this.commit.repoid][this.branchProcessor.branch].lastProcessed = this.commit.commit;
-    if (!this.state![this.commit.repoid][this.branchProcessor.branch].committedByDiflow) {
-      this.state![this.commit.repoid][this.branchProcessor.branch].committedByDiflow = [];
-    }
-    const lastCommit = await getLastCommitHash(this.processor.repoPaths.merged);
-    this.state![this.commit.repoid][this.branchProcessor.branch].committedByDiflow.push(lastCommit);
-
     await fs.writeFile(path.join(this.processor.repoPaths.config, 'state.json'), JSON.stringify(this.state, null, 2));
 
-    await runGitCommand(this.processor.repoPaths.config, 'add .');
-    await runGitCommand(
-      this.processor.repoPaths.config,
-      `commit -m "Diflow: update state for ${this.commit.repoid} commit ${this.commit.commit}"`
-    );
+    // await runGitCommand(this.processor.repoPaths.config, 'add .');
+    // await runGitCommand(
+    //   this.processor.repoPaths.config,
+    //   `commit -m "Diflow: update state for ${this.commit.repoid} commit ${this.commit.commit}"`
+    // );
 
     // await execAsync('git add .', { cwd: this.processor.repoPaths.config });
     // await execAsync(`git commit -m "Diflow: update state for ${this.commit.repoid} commit ${this.commit.commit}"`, {

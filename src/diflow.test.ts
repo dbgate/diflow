@@ -1,6 +1,13 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { afterDiflow, beforeDiflow, createTestCommit, getTestRepoPath, initTestRepos } from './testrepo';
+import {
+  afterDiflow,
+  beforeDiflow,
+  checkStateInConfig,
+  createTestCommit,
+  getTestRepoPath,
+  initTestRepos,
+} from './testrepo';
 import { Processor } from './processor';
 import { execAsync, sleep } from './tools';
 
@@ -10,19 +17,12 @@ describe('Git Repository Tests', () => {
   });
 
   test('Adding new files', async () => {
-    console.log('BEGIN TEST: Adding new files');
-
-    // await sleep(2000);
-
-    // Add new file in diff repo
     await createTestCommit(getTestRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
 
     await beforeDiflow();
 
     const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
-    console.log('BEGIN PROCESSOR: Adding new files');
     await processor.process();
-    console.log('END PROCESSOR: Adding new files');
 
     await afterDiflow();
 
@@ -30,7 +30,7 @@ describe('Git Repository Tests', () => {
     const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'newfile.txt'), 'utf8');
     const baseExists = await fs.exists(path.join(getTestRepoPath('base'), 'newfile.txt'));
 
-    console.log('END TEST: Adding new files');
+    await checkStateInConfig();
 
     // Verify changes
     expect(mergedExists).toBe(true);
@@ -39,10 +39,6 @@ describe('Git Repository Tests', () => {
   });
 
   test('Removing files', async () => {
-    console.log('BEGIN TEST: Remove files');
-
-    // await sleep(2000);
-    // Remove file in diff repo
     await fs.unlink(path.join(getTestRepoPath('diff'), 'file1.txt'));
     await execAsync('git add .', { cwd: getTestRepoPath('diff') });
     await execAsync('git commit -m "Remove file1.txt"', { cwd: getTestRepoPath('diff') });
@@ -50,9 +46,7 @@ describe('Git Repository Tests', () => {
     await beforeDiflow();
 
     const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
-    console.log('BEGIN PROCESSOR: Removing files');
     await processor.process();
-    console.log('END PROCESSOR: Removing files');
 
     await afterDiflow();
 
@@ -60,7 +54,7 @@ describe('Git Repository Tests', () => {
     const baseExists = await fs.exists(path.join(getTestRepoPath('base'), 'file1.txt'));
     const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'file1.txt'), 'utf8');
 
-    console.log('END TEST: Remove files');
+    await checkStateInConfig();
 
     // Verify changes
     expect(mergedExists).toBe(true);
@@ -69,8 +63,6 @@ describe('Git Repository Tests', () => {
   });
 
   test('Changing files', async () => {
-    console.log('BEGIN TEST: Changing files');
-
     // await sleep(2000);
 
     // Modify file in diff repo
@@ -81,9 +73,7 @@ describe('Git Repository Tests', () => {
     await beforeDiflow();
 
     const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
-    console.log('BEGIN PROCESSOR: Changing files');
     await processor.process();
-    console.log('END PROCESSOR: Changing files');
 
     await afterDiflow();
 
@@ -92,7 +82,7 @@ describe('Git Repository Tests', () => {
     const diffContent = await fs.readFile(path.join(getTestRepoPath('diff'), 'file1.txt'), 'utf8');
     const mergedContent = await fs.readFile(path.join(getTestRepoPath('merged'), 'file1.txt'), 'utf8');
 
-    console.log('END TEST: Changing files');
+    await checkStateInConfig();
 
     expect(baseContent).toBe('base content');
     expect(diffContent).toBe('modified content');

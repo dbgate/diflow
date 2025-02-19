@@ -98,3 +98,8 @@ export function sleep(ms: number) {
     setTimeout(resolve, ms);
   });
 }
+
+export async function getHeadCommitInRepo(repoPath: string) {
+  const { stdout: commitHash } = await execAsync('git rev-parse HEAD', { cwd: repoPath });
+  return commitHash.trim();
+}
