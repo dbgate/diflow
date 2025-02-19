@@ -118,7 +118,7 @@ describe('Git Repository Tests', () => {
     expect(content3).toBe('content3');
   });
 
-  test.only('2 commits in 2 repos', async () => {
+  test('2 commits in 2 repos', async () => {
     // await sleep(2000);
 
     // Modify file in diff repo

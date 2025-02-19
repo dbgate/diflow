@@ -23,6 +23,10 @@ export interface State {
 export interface Commit {
   commit: string;
   ts: number;
+  authorName: string;
+  authorEmail: string;
+  message: string;
+  authorDate: string;
 }
 
 export interface ChangeItem {

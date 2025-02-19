@@ -19,15 +19,19 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
 }
 
 export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
-  const log = await runGitCommand(repoPath, `log ${branch} --reverse --pretty=format:"%H|%ct"`);
+  const log = await runGitCommand(repoPath, `log ${branch} --reverse --pretty=format:"%H|%ct|%aN|%aE|%f|%ad"`);
   const res = log
     .split('\n')
     .filter(Boolean)
     .map(x => {
-      const [commit, ts] = x.split('|');
+      const [commit, ts, authorName, authorEmail, message, authorDate] = x.split('|');
       return {
         commit,
         ts: parseInt(ts),
+        authorName,
+        authorEmail,
+        message,
+        authorDate,
       };
     });
   res.sort((a, b) => a.ts - b.ts);

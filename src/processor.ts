@@ -102,8 +102,14 @@ export class Processor {
   }
 }
 
-class CommitToProcess {
-  constructor(public commit: string, public ts: number, public repoid: RepoId) {}
+interface CommitToProcess {
+  commit: string;
+  ts: number;
+  authorName: string;
+  authorEmail: string;
+  message: string;
+  authorDate: string;
+  repoid: RepoId;
 }
 
 class BranchProcessor {
@@ -225,7 +231,7 @@ class CommitProcessor {
       await runGitCommand(this.processor.repoPaths[repoid], `add -A`);
       await runGitCommand(
         this.processor.repoPaths[repoid],
-        `commit -m "CI: Auto commit changes in ${repoid} for branch ${this.branchProcessor.branch}"`
+        `commit -m "SYNC: ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${this.commit.authorDate}"`
       );
       await runGitCommand(this.processor.repoPaths[repoid], `push`);
       if (repoid !== 'config') {
