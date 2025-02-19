@@ -15,12 +15,16 @@ import {
 import { ChangeItem, Config, RepoId, State } from './types';
 import { minimatch } from 'minimatch';
 
+export interface ProcessOptions {
+  skipPush?: boolean;
+}
+
 export class Processor {
   repoPaths: Record<RepoId, string>;
 
   config?: Config = undefined;
 
-  constructor(public configRepoUrl: string, public basePath: string) {
+  constructor(public configRepoUrl: string, public basePath: string, public processOptions: ProcessOptions = {}) {
     this.repoPaths = {
       base: path.join(this.basePath, 'base'),
       diff: path.join(this.basePath, 'diff'),
@@ -235,7 +239,9 @@ class CommitProcessor {
         this.processor.repoPaths[repoid],
         `commit -m "SYNC: ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${this.commit.authorDate}"`
       );
-      await runGitCommand(this.processor.repoPaths[repoid], `push`);
+      if (!this.processor.processOptions.skipPush) {
+        await runGitCommand(this.processor.repoPaths[repoid], `push`);
+      }
       if (repoid !== 'config') {
         const hash = await getLastCommitHash(this.processor.repoPaths[repoid]);
         this.state![repoid][this.branchProcessor.branch].lastProcessed = hash;

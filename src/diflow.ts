@@ -6,7 +6,9 @@ if (process.argv.length < 3) {
   process.exit(1);
 }
 
-const processor = new Processor(process.argv[2], path.join(__dirname, 'repos'));
+const skipPush = process.argv.includes('--skip-push');
+
+const processor = new Processor(process.argv[2], path.join(__dirname, 'repos'), { skipPush });
 processor.process();
 
 console.log('Processing complete.');
