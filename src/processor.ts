@@ -75,15 +75,15 @@ export class Processor {
         if (!res['merged']?.[branch]?.lastProcessed) {
           throw new Error(`Missing state for branch ${branch} in merged repo`);
         }
-        if (!res['base']?.[branch]?.committedByDiflow) {
-          res['base'][branch].committedByDiflow = [];
-        }
-        if (!res['diff']?.[branch]?.committedByDiflow) {
-          res['diff'][branch].committedByDiflow = [];
-        }
-        if (!res['merged']?.[branch]?.committedByDiflow) {
-          res['merged'][branch].committedByDiflow = [];
-        }
+        // if (!res['base']?.[branch]?.committedByDiflow) {
+        //   res['base'][branch].committedByDiflow = [];
+        // }
+        // if (!res['diff']?.[branch]?.committedByDiflow) {
+        //   res['diff'][branch].committedByDiflow = [];
+        // }
+        // if (!res['merged']?.[branch]?.committedByDiflow) {
+        //   res['merged'][branch].committedByDiflow = [];
+        // }
       }
       return res;
     } catch (err) {

@@ -15,7 +15,7 @@ export interface State {
   [repo: string]: {
     [branch: string]: {
       lastProcessed: string;
-      committedByDiflow: string[];
+      // committedByDiflow: string[];
     };
   };
 }

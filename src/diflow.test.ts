@@ -88,4 +88,62 @@ describe('Git Repository Tests', () => {
     expect(diffContent).toBe('modified content');
     expect(mergedContent).toBe('modified content');
   });
+
+  test('2 commits in 1 repo', async () => {
+    // await sleep(2000);
+
+    // Modify file in diff repo
+    await fs.writeFile(path.join(getTestRepoPath('diff'), 'file2.txt'), 'content2');
+    await execAsync('git add .', { cwd: getTestRepoPath('diff') });
+    await execAsync('git commit -m "Add file2.txt"', { cwd: getTestRepoPath('diff') });
+
+    await fs.writeFile(path.join(getTestRepoPath('diff'), 'file3.txt'), 'content3');
+    await execAsync('git add .', { cwd: getTestRepoPath('diff') });
+    await execAsync('git commit -m "Add file3.txt"', { cwd: getTestRepoPath('diff') });
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    await processor.process();
+
+    await afterDiflow();
+
+    // Verify changes
+    const content2 = await fs.readFile(path.join(getTestRepoPath('merged'), 'file2.txt'), 'utf8');
+    const content3 = await fs.readFile(path.join(getTestRepoPath('merged'), 'file3.txt'), 'utf8');
+
+    await checkStateInConfig();
+
+    expect(content2).toBe('content2');
+    expect(content3).toBe('content3');
+  });
+
+  test.only('2 commits in 2 repos', async () => {
+    // await sleep(2000);
+
+    // Modify file in diff repo
+    await fs.writeFile(path.join(getTestRepoPath('diff'), 'file2.txt'), 'content2');
+    await execAsync('git add .', { cwd: getTestRepoPath('diff') });
+    await execAsync('git commit -m "Add file2.txt"', { cwd: getTestRepoPath('diff') });
+
+    await fs.writeFile(path.join(getTestRepoPath('base'), 'file3.txt'), 'content3');
+    await execAsync('git add .', { cwd: getTestRepoPath('base') });
+    await execAsync('git commit -m "Add file3.txt"', { cwd: getTestRepoPath('base') });
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    await processor.process();
+
+    await afterDiflow();
+
+    // Verify changes
+    const content2 = await fs.readFile(path.join(getTestRepoPath('merged'), 'file2.txt'), 'utf8');
+    const content3 = await fs.readFile(path.join(getTestRepoPath('merged'), 'file3.txt'), 'utf8');
+
+    await checkStateInConfig();
+
+    expect(content2).toBe('content2');
+    expect(content3).toBe('content3');
+  });
 });

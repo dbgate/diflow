@@ -47,7 +47,8 @@ export function filterCommitsToProcess(commits: Commit[], state: State, branch: 
     console.log(`Could not find last processed commit for ${branch} in ${repoid}`);
     process.exit(1);
   }
-  return commits.slice(lastCommitIndex + 1).filter(x => !state[repoid][branch].committedByDiflow?.includes(x.commit));
+  // return commits.slice(lastCommitIndex + 1).filter(x => !state[repoid][branch].committedByDiflow?.includes(x.commit));
+  return commits.slice(lastCommitIndex + 1);
 }
 
 export async function getDiffForCommit(repoPath: string, commitHash: string): Promise<ChangeItem[]> {

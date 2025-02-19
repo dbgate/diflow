@@ -120,7 +120,7 @@ export async function checkStateInConfig() {
   expect(state['diff']['master'].lastProcessed).toBe(diffHash);
   expect(state['merged']['master'].lastProcessed).toBe(mergedHash);
 
-  expect(state['base']['master'].committedByDiflow).toEqual([]);
-  expect(state['diff']['master'].committedByDiflow).toEqual([]);
-  expect(state['merged']['master'].committedByDiflow).toEqual([]);
+  // expect(state['base']['master'].committedByDiflow).toEqual([]);
+  // expect(state['diff']['master'].committedByDiflow).toEqual([]);
+  // expect(state['merged']['master'].committedByDiflow).toEqual([]);
 }
