@@ -17,16 +17,18 @@ import {
 import { ChangeItem, Config, RepoId, State } from './types';
 
 export class Processor {
-  repoPaths: Record<RepoId, string> = {
-    base: path.join(this.basePath, 'base'),
-    diff: path.join(this.basePath, 'diff'),
-    merged: path.join(this.basePath, 'merged'),
-    config: path.join(this.basePath, 'config'),
-  };
+  repoPaths: Record<RepoId, string>;
 
   config?: Config = undefined;
 
-  constructor(public configRepoUrl: string, public basePath: string) {}
+  constructor(public configRepoUrl: string, public basePath: string) {
+    this.repoPaths = {
+      base: path.join(this.basePath, 'base'),
+      diff: path.join(this.basePath, 'diff'),
+      merged: path.join(this.basePath, 'merged'),
+      config: path.join(this.basePath, 'config'),
+    };
+  }
 
   async initialize() {
     if (!(await fs.exists(this.basePath))) {
@@ -48,9 +50,9 @@ export class Processor {
       process.exit(1);
     }
 
-    for (const [repoid, repoPath] of Object.entries(this.config!.repos)) {
-      await cloneRepository(this.repoPaths[repoid as RepoId], repoPath);
-    }
+    await cloneRepository(this.repoPaths.base, this.config!.repos.base);
+    await cloneRepository(this.repoPaths.diff, this.config!.repos.diff);
+    await cloneRepository(this.repoPaths.merged, this.config!.repos.merged);
   }
 
   async loadState(): Promise<State> {
@@ -109,10 +111,12 @@ class BranchProcessor {
   constructor(public processor: Processor, public branch: string) {}
 
   async initialize() {
+    console.log('Initializing branch:', this.branch);
     await runGitCommand(this.processor.repoPaths.base, `checkout ${this.branch}`);
     await runGitCommand(this.processor.repoPaths.diff, `checkout ${this.branch}`);
     await runGitCommand(this.processor.repoPaths.merged, `checkout ${this.branch}`);
 
+    console.log('Getting commits...');
     const baseCommits = await getCommits(this.processor.repoPaths.base, this.branch);
     const diffCommits = await getCommits(this.processor.repoPaths.diff, this.branch);
     const mergedCommits = await getCommits(this.processor.repoPaths.merged, this.branch);
@@ -129,12 +133,14 @@ class BranchProcessor {
       ...mergedFilteredCommits.map(x => ({ ...x, repoid: 'merged' as RepoId })),
     ];
     this.commitsToProcess.sort((a, b) => a.ts - b.ts);
+    console.log('Initializing branch:', this.branch, 'DONE');
   }
 
   async process() {
     await this.initialize();
 
     for (const commit of this.commitsToProcess) {
+      console.log('Processing commit', commit.repoid, ':', commit.commit);
       const commitProcessor = new CommitProcessor(this.processor, this, commit);
       await commitProcessor.process();
     }
@@ -167,6 +173,8 @@ class CommitProcessor {
 
   async processFiles() {
     const files = await getDiffForCommit(this.processor.repoPaths[this.commit.repoid], this.commit.commit);
+
+    console.log('Processing files from commit:', files.length);
 
     for (const file of files) {
       if (this.commit.repoid === 'base') {
