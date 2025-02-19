@@ -59,6 +59,7 @@ export async function initTestRepos() {
         diff: getTestRepoPath('diff'),
         merged: getTestRepoPath('merged'),
       },
+      ignorePaths: ['ignore*.txt'],
     },
     null,
     2

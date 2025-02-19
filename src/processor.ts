@@ -3,7 +3,6 @@ import * as fs from 'fs-extra';
 import {
   cloneRepository,
   copyRepoFile,
-  execAsync,
   filterCommitsToProcess,
   getCommits,
   getDiffForCommit,
@@ -12,9 +11,9 @@ import {
   repoFileExists,
   repoHasModifications,
   runGitCommand,
-  sleep,
 } from './tools';
 import { ChangeItem, Config, RepoId, State } from './types';
+import { minimatch } from 'minimatch';
 
 export class Processor {
   repoPaths: Record<RepoId, string>;
@@ -185,6 +184,9 @@ class CommitProcessor {
     console.log('Processing files from commit:', files.length);
 
     for (const file of files) {
+      if ((this.processor.config?.ignorePaths ?? []).find(ignore => minimatch(file.file, ignore))) {
+        continue;
+      }
       if (this.commit.repoid === 'base') {
         await this.processBaseFile(file);
       } else if (this.commit.repoid === 'diff') {

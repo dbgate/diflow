@@ -9,6 +9,7 @@ export interface Config {
     merged: string;
     config: string;
   };
+  ignorePaths: string[];
 }
 
 export interface State {

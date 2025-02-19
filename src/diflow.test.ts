@@ -146,4 +146,23 @@ describe('Git Repository Tests', () => {
     expect(content2).toBe('content2');
     expect(content3).toBe('content3');
   });
+
+
+  test('Ignore path', async () => {
+    await createTestCommit(getTestRepoPath('diff'), 'ignorepath.txt', 'ignored content', 'diff');
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'repos'));
+    await processor.process();
+
+    await afterDiflow();
+
+    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'ignorepath.txt'));
+
+    await checkStateInConfig();
+
+    // Verify changes
+    expect(mergedExists).toBe(false);
+  });
 });
