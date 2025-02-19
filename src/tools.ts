@@ -4,7 +4,7 @@ import * as path from 'path';
 import { promisify } from 'util';
 import { ChangeItem, Commit, FileAction, RepoId, State } from './types';
 
-const execAsync = promisify(exec);
+export const execAsync = promisify(exec);
 
 export async function runGitCommand(repoPath: string, cmd: string): Promise<string> {
   try {
@@ -91,4 +91,10 @@ export async function repoHasModifications(repoPath: string): Promise<boolean> {
 
 export async function getLastCommitHash(repoPath: string): Promise<string> {
   return (await runGitCommand(repoPath, 'rev-parse HEAD')).trim();
+}
+
+export function sleep(ms: number) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
 }
