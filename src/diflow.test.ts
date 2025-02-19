@@ -102,7 +102,7 @@ describe('Git Repository Tests', () => {
     // execSync('git pull', { cwd: repos.DIFF });
   }
 
-  test('Adding new files', async () => {
+  test('Adding new files', () => {
     // Add new file in diff repo
     createCommit(getRepoPath('diff'), 'newfile.txt', 'new content', 'diff');
 
@@ -119,7 +119,7 @@ describe('Git Repository Tests', () => {
     expect(fs.existsSync(path.join(getRepoPath('base'), 'newfile.txt'))).toBe(false);
   });
 
-  test('Removing files', async () => {
+  test('Removing files', () => {
     // Remove file in diff repo
     fs.unlinkSync(path.join(getRepoPath('diff'), 'file1.txt'));
     execSync('git add .', { cwd: getRepoPath('diff') });
@@ -138,7 +138,7 @@ describe('Git Repository Tests', () => {
     expect(fs.readFileSync(path.join(getRepoPath('merged'), 'file1.txt'), 'utf8')).toBe('modified content');
   });
 
-  test.only('Changing files', async () => {
+  test('Changing files', () => {
     // Modify file in diff repo
     fs.writeFileSync(path.join(getRepoPath('diff'), 'file1.txt'), 'modified content');
     execSync('git add .', { cwd: getRepoPath('diff') });
