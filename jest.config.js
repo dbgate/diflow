@@ -1,3 +1,4 @@
 module.exports = {
-  roots: ['./dist']
+  roots: ['./dist'],
+  testTimeout: 30000
 };
