@@ -29,6 +29,7 @@ program
       clear: options.clear,
       secret: options.secret ?? process.env.DIFLOW_GIT_SECRET,
     });
+    console.log('GOT SECRET:', options.secret ?? process.env.DIFLOW_GIT_SECRET);
     processor.process();
     console.log('Processing complete.');
   });
