@@ -173,4 +173,22 @@ describe('Git Repository Tests', () => {
     // Verify changes
     expect(mergedExists).toBe(false);
   });
+
+  test('Ignore sync commits', async () => {
+    await createTestCommit(getTestRepoPath('diff'), 'newfile.txt', 'new content', 'diff', 'SYNC: ingore this commit');
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor.process();
+
+    await afterDiflow();
+
+    const mergedExists = await fs.exists(path.join(getTestRepoPath('merged'), 'newfile.txt'));
+
+    await checkStateInConfig();
+
+    // Verify changes
+    expect(mergedExists).toBe(false);
+  });
 });

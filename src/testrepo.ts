@@ -20,11 +20,21 @@ export async function initTestRepo(name: string) {
   await execAsync('git config user.name "Test User"', { cwd: repoPath });
 }
 
-export async function createTestCommit(repoPath: string, fileName: string, content: string, repoid: string) {
+export async function createTestCommit(
+  repoPath: string,
+  fileName: string,
+  content: string,
+  repoid: string,
+  message?: string
+) {
   console.log('Creating commit:', repoPath, 'file:', fileName, 'content:', content);
   await fs.writeFile(path.join(repoPath, fileName), content);
   await execAsync('git add .', { cwd: repoPath });
-  await execAsync(`git commit -m "Commit into ${repoid}"`, { cwd: repoPath });
+  if (message) {
+    await execAsync(`git commit -m "${message}"`, { cwd: repoPath });
+  } else {
+    await execAsync(`git commit -m "Commit into ${repoid}"`, { cwd: repoPath });
+  }
 
   const { stdout: commitHash } = await execAsync('git rev-parse HEAD', { cwd: repoPath });
   return commitHash.trim();
