@@ -12,12 +12,15 @@ program
 program
   .command('sync')
   .description('Ryn sync between GIT 3 repos (base+diff=merged)')
-  .requiredOption('-r, --repo', 'URL to control repo repo (configuration+state)')
-  .requiredOption('-b, --branch', 'Branch name to be processed')
+  .requiredOption('-r, --repo <string>', 'URL to control repo repo (configuration+state)')
+  .requiredOption('-b, --branch <string>', 'Branch name to be processed')
   .option('--skip-push', 'skip pushing changes to remote')
   .option('--clear', 'clear work repos before running')
   .action(options => {
-    const processor = new Processor(options.config, options.branch, path.join(__dirname, 'workrepos'), {
+    // console.log('repo:', options.repo);
+    // console.log('branch:', options.branch);
+    // return;
+    const processor = new Processor(options.repo, path.join(__dirname, 'workrepos'), options.branch, {
       skipPush: options.skipPush,
       clear: options.clear,
     });
@@ -36,4 +39,4 @@ program
 // const processor = new Processor(process.argv[2], path.join(__dirname, 'workrepos'), { skipPush, clear });
 // processor.process();
 
-console.log('Processing complete.');
+program.parse();

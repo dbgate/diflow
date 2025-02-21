@@ -133,7 +133,7 @@ export class Processor {
       ...mergedFilteredCommits.map(x => ({ ...x, repoid: 'merged' as RepoId })),
     ];
     this.commitsToProcess.sort((a, b) => a.ts - b.ts);
-    console.log('Initializing branch:', this.branch, 'DONE');
+    // console.log('Initializing branch:', this.branch, 'DONE');
     console.log('Commits to process:', this.commitsToProcess.length);
   }
 
@@ -164,7 +164,7 @@ export class Processor {
     await this.initialize();
 
     for (const commit of this.commitsToProcess) {
-      console.log('Processing commit', commit.repoid, ':', commit.commit);
+      console.log('Processing commit', commit.repoid, ':', commit.message);
       const commitProcessor = new CommitProcessor(this, commit);
       await commitProcessor.process();
     }
@@ -197,8 +197,6 @@ class CommitProcessor {
 
   async processFiles() {
     const files = await getDiffForCommit(this.processor.repoPaths[this.commit.repoid], this.commit.commit);
-
-    console.log('Processing files from commit:', files.length);
 
     for (const file of files) {
       if ((this.processor.config?.ignorePaths ?? []).find(ignore => minimatch(file.file, ignore, { partial: true }))) {
