@@ -15,6 +15,10 @@ program
   .requiredOption('-r, --repo <string>', 'URL to control repo repo (configuration+state)')
   .requiredOption('-b, --branch <string>', 'Branch name to be processed')
   .option('--skip-push', 'skip pushing changes to remote')
+  .option(
+    '--secret <string>',
+    'secret for accessing repo. URLs of git repos should be in shape https://${SECRET}@<url>'
+  )
   .option('--clear', 'clear work repos before running')
   .action(options => {
     // console.log('repo:', options.repo);
@@ -23,6 +27,7 @@ program
     const processor = new Processor(options.repo, path.join(__dirname, 'workrepos'), options.branch, {
       skipPush: options.skipPush,
       clear: options.clear,
+      secret: options.secret,
     });
     processor.process();
     console.log('Processing complete.');

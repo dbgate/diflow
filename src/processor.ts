@@ -19,6 +19,7 @@ import { rimraf } from 'rimraf';
 export interface ProcessOptions {
   skipPush?: boolean;
   clear?: boolean;
+  secret?: string;
 }
 
 interface CommitToProcess {
@@ -63,7 +64,10 @@ export class Processor {
       await fs.mkdir(this.basePath);
     }
 
-    await cloneRepository(this.repoPaths.config, this.configRepoUrl);
+    await cloneRepository(
+      this.repoPaths.config,
+      this.configRepoUrl.replace('${SECRET}', this.processOptions.secret ?? '')
+    );
     await runGitCommand(this.repoPaths.config, `checkout ${this.branch}`);
 
     const configPath = path.join(this.repoPaths.config, 'config.json');
@@ -86,9 +90,18 @@ export class Processor {
       process.exit(1);
     }
 
-    await cloneRepository(this.repoPaths.base, this.config!.repos.base);
-    await cloneRepository(this.repoPaths.diff, this.config!.repos.diff);
-    await cloneRepository(this.repoPaths.merged, this.config!.repos.merged);
+    await cloneRepository(
+      this.repoPaths.base,
+      this.config!.repos.base.replace('${SECRET}', this.processOptions.secret ?? '')
+    );
+    await cloneRepository(
+      this.repoPaths.diff,
+      this.config!.repos.diff.replace('${SECRET}', this.processOptions.secret ?? '')
+    );
+    await cloneRepository(
+      this.repoPaths.merged,
+      this.config!.repos.merged.replace('${SECRET}', this.processOptions.secret ?? '')
+    );
 
     await runGitCommand(this.repoPaths.base, `checkout ${this.branch}`);
     await runGitCommand(this.repoPaths.diff, `checkout ${this.branch}`);
