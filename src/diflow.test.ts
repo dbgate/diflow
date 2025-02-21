@@ -191,4 +191,24 @@ describe('Git Repository Tests', () => {
     // Verify changes
     expect(mergedExists).toBe(false);
   });
+
+  test('Adding file to merged', async () => {
+    await createTestCommit(getTestRepoPath('merged'), 'outer.txt', 'outer', 'merged');
+    await createTestCommit(getTestRepoPath('merged'), 'folder/inner.txt', 'inner', 'merged');
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor.process();
+
+    await afterDiflow();
+
+    await checkStateInConfig();
+
+    expect(await fs.exists(path.join(getTestRepoPath('diff'), 'outer.txt'))).toBe(true);
+    expect(await fs.exists(path.join(getTestRepoPath('base'), 'outer.txt'))).toBe(false);
+
+    expect(await fs.exists(path.join(getTestRepoPath('diff'), 'folder/inner.txt'))).toBe(false);
+    expect(await fs.exists(path.join(getTestRepoPath('base'), 'folder/inner.txt'))).toBe(true);
+  });
 });

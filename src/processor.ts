@@ -246,9 +246,19 @@ class CommitProcessor {
   }
 
   async processMergedFile(file: ChangeItem) {
-    if (file.action === 'M' || file.action === 'A') {
-      await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.base, file.file);
-      await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.diff, file.file);
+    if (file.action === 'A') {
+      if (await fs.exists(path.join(this.processor.repoPaths.diff, path.dirname(file.file)))) {
+        // if exists folder, copy to diff
+        await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.diff, file.file);
+      } else {
+        await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.base, file.file);
+      }
+    } else if (file.action === 'M') {
+      if (await repoFileExists(this.processor.repoPaths.diff, file.file)) {
+        await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.diff, file.file);
+      } else {
+        await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.base, file.file);
+      }
     } else if (file.action === 'D') {
       await removeRepoFile(this.processor.repoPaths.base, file.file);
       await removeRepoFile(this.processor.repoPaths.diff, file.file);

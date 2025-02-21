@@ -28,6 +28,7 @@ export async function createTestCommit(
   message?: string
 ) {
   console.log('Creating commit:', repoPath, 'file:', fileName, 'content:', content);
+  await fs.ensureDir(path.join(repoPath, path.dirname(fileName)));
   await fs.writeFile(path.join(repoPath, fileName), content);
   await execAsync('git add .', { cwd: repoPath });
   if (message) {
