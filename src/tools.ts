@@ -19,12 +19,12 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
 }
 
 export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
-  const log = await runGitCommand(repoPath, `log ${branch} --reverse --pretty=format:"%H|%ct|%aN|%aE|%f|%ad"`);
+  const log = await runGitCommand(repoPath, `log ${branch} --reverse --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`);
   const res = log
     .split('\n')
     .filter(Boolean)
     .map(x => {
-      const [commit, ts, authorName, authorEmail, message, authorDate] = x.split('|');
+      const [commit, ts, authorName, authorEmail, message, authorDate] = x.split('@|@');
       return {
         commit,
         ts: parseInt(ts),
@@ -45,14 +45,19 @@ export async function cloneRepository(repoPath: string, url: string) {
   }
 }
 
-export function filterCommitsToProcess(commits: Commit[], state: State, branch: string, repoid: RepoId): Commit[] {
-  const lastCommitIndex = commits.findIndex(x => x.commit === state[repoid][branch].lastProcessed);
+export function filterCommitsToProcess(
+  commits: Commit[],
+  state: State,
+  branch: string,
+  repoid: RepoId,
+  syncCommitPrefix: string
+): Commit[] {
+  const lastCommitIndex = commits.findIndex(x => x.commit === state[repoid].lastProcessed);
   if (lastCommitIndex < 0) {
     console.log(`Could not find last processed commit for ${branch} in ${repoid}`);
     process.exit(1);
   }
-  // return commits.slice(lastCommitIndex + 1).filter(x => !state[repoid][branch].committedByDiflow?.includes(x.commit));
-  return commits.slice(lastCommitIndex + 1);
+  return commits.slice(lastCommitIndex + 1).filter(x => !x.message?.startsWith(syncCommitPrefix));
 }
 
 export async function getDiffForCommit(repoPath: string, commitHash: string): Promise<ChangeItem[]> {

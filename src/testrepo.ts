@@ -1,8 +1,9 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { rimraf } from 'rimraf';
-import { execAsync, getHeadCommitInRepo, sleep } from './tools';
+import { execAsync, getCommits, getHeadCommitInRepo, sleep } from './tools';
 import { State } from './types';
+import _ from 'lodash';
 
 export function getTestRepoPath(repo: string) {
   const repoPath = path.join(__dirname, 'testrepos', repo);
@@ -70,19 +71,13 @@ export async function initTestRepos() {
   const stateContent = JSON.stringify(
     {
       base: {
-        master: {
-          lastProcessed: baseHash,
-        },
+        lastProcessed: baseHash,
       },
       diff: {
-        master: {
-          lastProcessed: diffHash,
-        },
+        lastProcessed: diffHash,
       },
       merged: {
-        master: {
-          lastProcessed: mergedHash,
-        },
+        lastProcessed: mergedHash,
       },
     },
     null,
@@ -113,13 +108,21 @@ export async function afterDiflow() {
 export async function checkStateInConfig() {
   const stateContent = await fs.readFile(path.join(getTestRepoPath('config'), 'state.json'), 'utf8');
   const state = JSON.parse(stateContent) as State;
-  const baseHash = await getHeadCommitInRepo(getTestRepoPath('base'));
-  const diffHash = await getHeadCommitInRepo(getTestRepoPath('diff'));
-  const mergedHash = await getHeadCommitInRepo(getTestRepoPath('merged'));
 
-  expect(state['base']['master'].lastProcessed).toBe(baseHash);
-  expect(state['diff']['master'].lastProcessed).toBe(diffHash);
-  expect(state['merged']['master'].lastProcessed).toBe(mergedHash);
+  const baseHistory = await getCommits(getTestRepoPath('base'), 'master');
+  const diffHistory = await getCommits(getTestRepoPath('diff'), 'master');
+  const mergedHistory = await getCommits(getTestRepoPath('merged'), 'master');
+
+  console.log('MERGED HISTORY');
+  console.log(mergedHistory);
+
+  const baseHash = _.findLast(baseHistory, x => !x.message.startsWith('SYNC:'))?.commit;
+  const diffHash = _.findLast(diffHistory, x => !x.message.startsWith('SYNC:'))?.commit;
+  const mergedHash = _.findLast(mergedHistory, x => !x.message.startsWith('SYNC:'))?.commit;
+
+  expect(state['base'].lastProcessed).toBe(baseHash);
+  expect(state['diff'].lastProcessed).toBe(diffHash);
+  expect(state['merged'].lastProcessed).toBe(mergedHash);
 
   // expect(state['base']['master'].committedByDiflow).toEqual([]);
   // expect(state['diff']['master'].committedByDiflow).toEqual([]);

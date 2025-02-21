@@ -21,12 +21,27 @@ export interface ProcessOptions {
   clear?: boolean;
 }
 
+interface CommitToProcess {
+  commit: string;
+  ts: number;
+  authorName: string;
+  authorEmail: string;
+  message: string;
+  authorDate: string;
+  repoid: RepoId;
+}
 export class Processor {
   repoPaths: Record<RepoId, string>;
+  commitsToProcess: CommitToProcess[] = [];
 
   config?: Config = undefined;
 
-  constructor(public configRepoUrl: string, public basePath: string, public processOptions: ProcessOptions = {}) {
+  constructor(
+    public configRepoUrl: string,
+    public basePath: string,
+    public branch: string,
+    public processOptions: ProcessOptions = {}
+  ) {
     this.repoPaths = {
       base: path.join(this.basePath, 'base'),
       diff: path.join(this.basePath, 'diff'),
@@ -49,7 +64,7 @@ export class Processor {
     }
 
     await cloneRepository(this.repoPaths.config, this.configRepoUrl);
-    await runGitCommand(this.repoPaths.config, 'checkout master');
+    await runGitCommand(this.repoPaths.config, `checkout ${this.branch}`);
 
     const configPath = path.join(this.repoPaths.config, 'config.json');
     if (!(await fs.exists(configPath))) {
@@ -59,6 +74,13 @@ export class Processor {
 
     try {
       this.config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      if (!this.config) {
+        console.error('Invalid configuration file:', configPath);
+        process.exit(1);
+      }
+      if (!this.config.syncCommitPrefix) {
+        this.config.syncCommitPrefix = 'SYNC:';
+      }
     } catch (err) {
       console.error('Error parsing config.json:', err);
       process.exit(1);
@@ -67,85 +89,43 @@ export class Processor {
     await cloneRepository(this.repoPaths.base, this.config!.repos.base);
     await cloneRepository(this.repoPaths.diff, this.config!.repos.diff);
     await cloneRepository(this.repoPaths.merged, this.config!.repos.merged);
+
+    await runGitCommand(this.repoPaths.base, `checkout ${this.branch}`);
+    await runGitCommand(this.repoPaths.diff, `checkout ${this.branch}`);
+    await runGitCommand(this.repoPaths.merged, `checkout ${this.branch}`);
+
+    await this.readCommitsToProcess();
   }
 
-  async loadState(): Promise<State> {
-    const statePath = path.join(this.repoPaths.config, 'state.json');
-    if (!(await fs.exists(statePath))) {
-      console.error(`Missing state file: ${statePath}`);
-      process.exit(1);
-    }
-
-    try {
-      const res: State = JSON.parse(fs.readFileSync(statePath, 'utf8'));
-      for (const branch of this.config!.branches) {
-        if (!res['base']?.[branch]?.lastProcessed) {
-          throw new Error(`Missing state for branch ${branch} in base repo`);
-        }
-        if (!res['diff']?.[branch]?.lastProcessed) {
-          throw new Error(`Missing state for branch ${branch} in diff repo`);
-        }
-        if (!res['merged']?.[branch]?.lastProcessed) {
-          throw new Error(`Missing state for branch ${branch} in merged repo`);
-        }
-        // if (!res['base']?.[branch]?.committedByDiflow) {
-        //   res['base'][branch].committedByDiflow = [];
-        // }
-        // if (!res['diff']?.[branch]?.committedByDiflow) {
-        //   res['diff'][branch].committedByDiflow = [];
-        // }
-        // if (!res['merged']?.[branch]?.committedByDiflow) {
-        //   res['merged'][branch].committedByDiflow = [];
-        // }
-      }
-      return res;
-    } catch (err) {
-      console.error('Error parsing state.json:', err);
-      process.exit(1);
-    }
-  }
-
-  async process() {
-    await this.initialize();
-
-    for (const branch of this.config!.branches) {
-      const branchProcessor = new BranchProcessor(this, branch);
-      await branchProcessor.process();
-    }
-  }
-}
-
-interface CommitToProcess {
-  commit: string;
-  ts: number;
-  authorName: string;
-  authorEmail: string;
-  message: string;
-  authorDate: string;
-  repoid: RepoId;
-}
-
-class BranchProcessor {
-  commitsToProcess: CommitToProcess[] = [];
-
-  constructor(public processor: Processor, public branch: string) {}
-
-  async initialize() {
-    console.log('Initializing branch:', this.branch);
-    await runGitCommand(this.processor.repoPaths.base, `checkout ${this.branch}`);
-    await runGitCommand(this.processor.repoPaths.diff, `checkout ${this.branch}`);
-    await runGitCommand(this.processor.repoPaths.merged, `checkout ${this.branch}`);
-
+  async readCommitsToProcess() {
     console.log('Getting commits...');
-    const baseCommits = await getCommits(this.processor.repoPaths.base, this.branch);
-    const diffCommits = await getCommits(this.processor.repoPaths.diff, this.branch);
-    const mergedCommits = await getCommits(this.processor.repoPaths.merged, this.branch);
+    const baseCommits = await getCommits(this.repoPaths.base, this.branch);
+    const diffCommits = await getCommits(this.repoPaths.diff, this.branch);
+    const mergedCommits = await getCommits(this.repoPaths.merged, this.branch);
 
-    const state = await this.processor.loadState();
+    const state = await this.loadState();
 
-    const baseFilteredCommits = filterCommitsToProcess(baseCommits, state, this.branch, 'base');
-    const diffFilteredCommits = filterCommitsToProcess(diffCommits, state, this.branch, 'diff');
-    const mergedFilteredCommits = filterCommitsToProcess(mergedCommits, state, this.branch, 'merged');
+    const baseFilteredCommits = filterCommitsToProcess(
+      baseCommits,
+      state,
+      this.branch,
+      'base',
+      this.config!.syncCommitPrefix!
+    );
+    const diffFilteredCommits = filterCommitsToProcess(
+      diffCommits,
+      state,
+      this.branch,
+      'diff',
+      this.config!.syncCommitPrefix!
+    );
+    const mergedFilteredCommits = filterCommitsToProcess(
+      mergedCommits,
+      state,
+      this.branch,
+      'merged',
+      this.config!.syncCommitPrefix!
+    );
 
     this.commitsToProcess = [
       ...baseFilteredCommits.map(x => ({ ...x, repoid: 'base' as RepoId })),
@@ -157,12 +137,35 @@ class BranchProcessor {
     console.log('Commits to process:', this.commitsToProcess.length);
   }
 
+  async loadState(): Promise<State> {
+    const statePath = path.join(this.repoPaths.config, 'state.json');
+    let state: State = {};
+    if (await fs.exists(statePath)) {
+      try {
+        state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+      } catch (err) {
+        console.error('Error parsing state.json:', err);
+        process.exit(1);
+      }
+    }
+    if (!state['base']?.lastProcessed) {
+      state['base'] = { ...state['base'], lastProcessed: await getLastCommitHash(this.repoPaths.base) };
+    }
+    if (!state['diff']?.lastProcessed) {
+      state['diff'] = { ...state['diff'], lastProcessed: await getLastCommitHash(this.repoPaths.diff) };
+    }
+    if (!state['merged']?.lastProcessed) {
+      state['merged'] = { ...state['merged'], lastProcessed: await getLastCommitHash(this.repoPaths.merged) };
+    }
+    return state;
+  }
+
   async process() {
     await this.initialize();
 
     for (const commit of this.commitsToProcess) {
       console.log('Processing commit', commit.repoid, ':', commit.commit);
-      const commitProcessor = new CommitProcessor(this.processor, this, commit);
+      const commitProcessor = new CommitProcessor(this, commit);
       await commitProcessor.process();
     }
   }
@@ -171,7 +174,7 @@ class BranchProcessor {
 class CommitProcessor {
   state?: State = undefined;
 
-  constructor(public processor: Processor, public branchProcessor: BranchProcessor, public commit: CommitToProcess) {}
+  constructor(public processor: Processor, public commit: CommitToProcess) {}
 
   async initialize() {
     this.state = await this.processor.loadState();
@@ -186,9 +189,9 @@ class CommitProcessor {
   }
 
   async checkout() {
-    await runGitCommand(this.processor.repoPaths.base, `checkout ${this.branchProcessor.branch}`);
-    await runGitCommand(this.processor.repoPaths.diff, `checkout ${this.branchProcessor.branch}`);
-    await runGitCommand(this.processor.repoPaths.merged, `checkout ${this.branchProcessor.branch}`);
+    await runGitCommand(this.processor.repoPaths.base, `checkout ${this.processor.branch}`);
+    await runGitCommand(this.processor.repoPaths.diff, `checkout ${this.processor.branch}`);
+    await runGitCommand(this.processor.repoPaths.merged, `checkout ${this.processor.branch}`);
     await runGitCommand(this.processor.repoPaths[this.commit.repoid], `checkout ${this.commit.commit}`);
   }
 
@@ -247,16 +250,15 @@ class CommitProcessor {
       await runGitCommand(this.processor.repoPaths[repoid], `add -A`);
       await runGitCommand(
         this.processor.repoPaths[repoid],
-        `commit -m "SYNC: ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${this.commit.authorDate}"`
+        `commit -m "${this.processor.config?.syncCommitPrefix} ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${this.commit.authorDate}"`
       );
       if (!this.processor.processOptions.skipPush) {
         await runGitCommand(this.processor.repoPaths[repoid], `push`);
       }
-      if (repoid !== 'config') {
-        const hash = await getLastCommitHash(this.processor.repoPaths[repoid]);
-        this.state![repoid][this.branchProcessor.branch].lastProcessed = hash;
-        // this.state![repoid][this.branchProcessor.branch].committedByDiflow.push(hash);
-      }
+      // if (repoid !== 'config') {
+      //   const hash = await getLastCommitHash(this.processor.repoPaths[repoid]);
+      //   this.state![repoid].lastProcessed = hash;
+      // }
       console.log('Commiting changes for repo:', repoid, 'DONE.');
     }
   }
@@ -271,7 +273,7 @@ class CommitProcessor {
     if (this.commit.repoid !== 'merged') {
       await this.commitChangesInRepo('merged');
     }
-    this.state![this.commit.repoid][this.branchProcessor.branch].lastProcessed = this.commit.commit;
+    this.state![this.commit.repoid].lastProcessed = this.commit.commit;
 
     await this.saveState();
 

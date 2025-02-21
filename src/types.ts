@@ -2,7 +2,6 @@ export type RepoId = 'base' | 'diff' | 'merged' | 'config';
 export type FileAction = 'A' | 'D' | 'M';
 
 export interface Config {
-  branches: string[];
   repos: {
     base: string;
     diff: string;
@@ -10,14 +9,12 @@ export interface Config {
     config: string;
   };
   ignorePaths: string[];
+  syncCommitPrefix?: string;
 }
 
 export interface State {
   [repo: string]: {
-    [branch: string]: {
-      lastProcessed: string;
-      // committedByDiflow: string[];
-    };
+    lastProcessed: string;
   };
 }
 

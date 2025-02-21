@@ -21,7 +21,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
     await processor.process();
 
     await afterDiflow();
@@ -45,7 +45,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
     await processor.process();
 
     await afterDiflow();
@@ -72,7 +72,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
     await processor.process();
 
     await afterDiflow();
@@ -103,7 +103,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
     await processor.process();
 
     await afterDiflow();
@@ -132,7 +132,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
     await processor.process();
 
     await afterDiflow();
@@ -147,7 +147,7 @@ describe('Git Repository Tests', () => {
     expect(content3).toBe('content3');
   });
 
-  test.only('Ignore path', async () => {
+  test('Ignore path', async () => {
     const folder = path.join(getTestRepoPath('diff'), '.github', 'workflows');
     await fs.mkdir(folder, { recursive: true });
     await createTestCommit(
@@ -159,7 +159,7 @@ describe('Git Repository Tests', () => {
 
     await beforeDiflow();
 
-    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'));
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
     await processor.process();
 
     await afterDiflow();
