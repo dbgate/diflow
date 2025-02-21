@@ -17,7 +17,7 @@ program
   .option('--skip-push', 'skip pushing changes to remote')
   .option(
     '--secret <string>',
-    'secret for accessing repo. URLs of git repos should be in shape https://${SECRET}@<url>. You could also use DIFLOW_GIT_SECRET env variable.'
+    'secret for accessing repo. URLs of git repos should be in shape https://DIFLOW_GIT_SECRET@<url>. You could also use DIFLOW_GIT_SECRET env variable.'
   )
   .option('--clear', 'clear work repos before running')
   .action(options => {
