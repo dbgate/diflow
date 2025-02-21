@@ -17,7 +17,7 @@ program
   .option('--skip-push', 'skip pushing changes to remote')
   .option(
     '--secret <string>',
-    'secret for accessing repo. URLs of git repos should be in shape https://${SECRET}@<url>'
+    'secret for accessing repo. URLs of git repos should be in shape https://${SECRET}@<url>. You could also use DIFLOW_GIT_SECRET env variable.'
   )
   .option('--clear', 'clear work repos before running')
   .action(options => {
@@ -27,7 +27,7 @@ program
     const processor = new Processor(options.repo, path.join(__dirname, 'workrepos'), options.branch, {
       skipPush: options.skipPush,
       clear: options.clear,
-      secret: options.secret,
+      secret: options.secret ?? process.env.DIFLOW_GIT_SECRET,
     });
     processor.process();
     console.log('Processing complete.');
