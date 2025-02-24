@@ -3,6 +3,7 @@ export type FileAction = 'A' | 'D' | 'M';
 
 export interface RepoConfig {
   url: string;
+  commitTag?: string; // eg. [skip ci] for skipping github pipeline  
 }
 
 export interface RepoIdentifier {

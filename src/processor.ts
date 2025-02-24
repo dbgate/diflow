@@ -314,8 +314,15 @@ class CommitProcessor {
       await runGitCommand(this.processor.repoPaths[repoid], `add -A`);
       await runGitCommand(
         this.processor.repoPaths[repoid],
-        `commit -m "${this.processor.config?.syncCommitPrefix} [skip ci] ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${this.commit.authorDate}"`
+        `commit -m "${this.processor.config?.syncCommitPrefix} ${
+          repoid != 'config' && this.processor.config?.repos[repoid]?.commitTag
+            ? `${this.processor.config?.repos[repoid]?.commitTag} `
+            : ''
+        } ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${
+          this.commit.authorDate
+        }"`
       );
+
       if (!this.processor.processOptions.skipPush) {
         await runGitCommand(this.processor.repoPaths[repoid], `push`);
       }
