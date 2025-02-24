@@ -1,12 +1,15 @@
 export type RepoId = 'base' | 'diff' | 'merged' | 'config';
 export type FileAction = 'A' | 'D' | 'M';
 
+export interface RepoConfig {
+  url: string;
+}
+
 export interface Config {
   repos: {
-    base: string;
-    diff: string;
-    merged: string;
-    config: string;
+    base: RepoConfig;
+    diff: RepoConfig;
+    merged: RepoConfig;
   };
   ignorePaths: string[];
   syncCommitPrefix?: string;

@@ -92,15 +92,15 @@ export class Processor {
 
     await cloneRepository(
       this.repoPaths.base,
-      this.config!.repos.base.replace('DIFLOW_GIT_SECRET', this.processOptions.secret ?? '')
+      this.config!.repos.base.url.replace('DIFLOW_GIT_SECRET', this.processOptions.secret ?? '')
     );
     await cloneRepository(
       this.repoPaths.diff,
-      this.config!.repos.diff.replace('DIFLOW_GIT_SECRET', this.processOptions.secret ?? '')
+      this.config!.repos.diff.url.replace('DIFLOW_GIT_SECRET', this.processOptions.secret ?? '')
     );
     await cloneRepository(
       this.repoPaths.merged,
-      this.config!.repos.merged.replace('DIFLOW_GIT_SECRET', this.processOptions.secret ?? '')
+      this.config!.repos.merged.url.replace('DIFLOW_GIT_SECRET', this.processOptions.secret ?? '')
     );
 
     await runGitCommand(this.repoPaths.base, `checkout ${this.branch}`);

@@ -67,9 +67,9 @@ export async function initTestRepos() {
     {
       branches: ['master'],
       repos: {
-        base: getTestRepoPath('base'),
-        diff: getTestRepoPath('diff'),
-        merged: getTestRepoPath('merged'),
+        base: { url: getTestRepoPath('base') },
+        diff: { url: getTestRepoPath('diff') },
+        merged: { url: getTestRepoPath('merged') },
       },
       ignorePaths: ['.github/**'],
     },
