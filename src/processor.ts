@@ -12,7 +12,7 @@ import {
   repoHasModifications,
   runGitCommand,
 } from './tools';
-import { ChangeItem, Config, RepoId, State } from './types';
+import { ChangeItem, Config, RepoId, RepoIdentifier, State } from './types';
 import { minimatch } from 'minimatch';
 import { rimraf } from 'rimraf';
 
@@ -245,13 +245,56 @@ class CommitProcessor {
     }
   }
 
+  async matchIdentifiers(repoPath: string, file: string, identifiers?: RepoIdentifier[]) {
+    if (!identifiers) {
+      return false;
+    }
+
+    let content: string | null = null;
+    for (const identifier of identifiers) {
+      if (identifier.content) {
+        if (content == null) {
+          content = await fs.readFile(path.join(repoPath, file), 'utf8');
+        }
+        if (content.includes(identifier.content)) {
+          return true;
+        }
+      }
+      if (identifier.name) {
+        if (minimatch(file, identifier.name, { partial: true })) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   async processMergedFile(file: ChangeItem) {
     if (file.action === 'A') {
-      if (await fs.exists(path.join(this.processor.repoPaths.diff, path.dirname(file.file)))) {
-        // if exists folder, copy to diff
-        await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.diff, file.file);
-      } else {
+      let target = this.processor.config?.newFilesTargetDefault ?? 'diff';
+      if (
+        await this.matchIdentifiers(
+          this.processor.repoPaths.diff,
+          file.file,
+          this.processor.config?.repos.base.identifiers
+        )
+      ) {
+        target = 'base';
+      }
+      if (
+        await this.matchIdentifiers(
+          this.processor.repoPaths.diff,
+          file.file,
+          this.processor.config?.repos.diff.identifiers
+        )
+      ) {
+        target = 'diff';
+      }
+
+      if (target === 'base') {
         await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.base, file.file);
+      } else {
+        await copyRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.diff, file.file);
       }
     } else if (file.action === 'M') {
       if (await repoFileExists(this.processor.repoPaths.diff, file.file)) {

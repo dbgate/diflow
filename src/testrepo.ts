@@ -2,7 +2,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { rimraf } from 'rimraf';
 import { execAsync, getCommits, getHeadCommitInRepo, sleep } from './tools';
-import { State } from './types';
+import { Config, State } from './types';
 import _ from 'lodash';
 
 export function getTestRepoPath(repo: string) {
@@ -62,20 +62,28 @@ export async function initTestRepos() {
   const diffHash = await createTestCommit(getTestRepoPath('diff'), 'file1.txt', 'different content', 'diff');
   const mergedHash = await createTestCommit(getTestRepoPath('merged'), 'file1.txt', 'different content', 'merged');
 
-  // Create config.json in config repo
-  const configContent = JSON.stringify(
-    {
-      branches: ['master'],
-      repos: {
-        base: { url: getTestRepoPath('base') },
-        diff: { url: getTestRepoPath('diff') },
-        merged: { url: getTestRepoPath('merged') },
+  const config: Config = {
+    repos: {
+      base: {
+        url: getTestRepoPath('base'),
+        identifiers: [
+          {
+            name: 'base-folder/**',
+          },
+        ],
       },
-      ignorePaths: ['.github/**'],
+      diff: {
+        url: getTestRepoPath('diff'),
+      },
+      merged: {
+        url: getTestRepoPath('merged'),
+      },
     },
-    null,
-    2
-  );
+    ignorePaths: ['.github/**'],
+  };
+
+  // Create config.json in config repo
+  const configContent = JSON.stringify(config, null, 2);
   await createTestCommit(getTestRepoPath('config'), 'config.json', configContent, 'config');
 
   // Create state.json in config repo

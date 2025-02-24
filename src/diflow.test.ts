@@ -193,8 +193,8 @@ describe('Git Repository Tests', () => {
   });
 
   test('Adding file to merged', async () => {
-    await createTestCommit(getTestRepoPath('merged'), 'outer.txt', 'outer', 'merged');
-    await createTestCommit(getTestRepoPath('merged'), 'folder/inner.txt', 'inner', 'merged');
+    await createTestCommit(getTestRepoPath('merged'), 'normal-folder/diff.txt', 'diff content', 'merged');
+    await createTestCommit(getTestRepoPath('merged'), 'base-folder/base.txt', 'base content', 'merged');
 
     await beforeDiflow();
 
@@ -205,10 +205,10 @@ describe('Git Repository Tests', () => {
 
     await checkStateInConfig();
 
-    expect(await fs.exists(path.join(getTestRepoPath('diff'), 'outer.txt'))).toBe(true);
-    expect(await fs.exists(path.join(getTestRepoPath('base'), 'outer.txt'))).toBe(false);
+    expect(await fs.exists(path.join(getTestRepoPath('diff'), 'normal-folder/diff.txt'))).toBe(true);
+    expect(await fs.exists(path.join(getTestRepoPath('base'), 'normal-folder/diff.txt'))).toBe(false);
 
-    expect(await fs.exists(path.join(getTestRepoPath('diff'), 'folder/inner.txt'))).toBe(false);
-    expect(await fs.exists(path.join(getTestRepoPath('base'), 'folder/inner.txt'))).toBe(true);
+    expect(await fs.exists(path.join(getTestRepoPath('diff'), 'base-folder/base.txt'))).toBe(false);
+    expect(await fs.exists(path.join(getTestRepoPath('base'), 'base-folder/base.txt'))).toBe(true);
   });
 });

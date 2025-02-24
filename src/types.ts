@@ -5,14 +5,25 @@ export interface RepoConfig {
   url: string;
 }
 
+export interface RepoIdentifier {
+  content?: string;
+  name?: string;
+  // applyOnExisting?: boolean;
+}
+
+export interface SourceRepoConfig extends RepoConfig {
+  identifiers?: RepoIdentifier[];
+}
+
 export interface Config {
   repos: {
-    base: RepoConfig;
-    diff: RepoConfig;
+    base: SourceRepoConfig;
+    diff: SourceRepoConfig;
     merged: RepoConfig;
   };
   ignorePaths: string[];
   syncCommitPrefix?: string;
+  newFilesTargetDefault?: 'base' | 'diff'; // default: diff
 }
 
 export interface State {
