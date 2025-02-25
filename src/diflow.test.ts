@@ -5,6 +5,7 @@ import {
   beforeDiflow,
   checkStateInConfig,
   createTestCommit,
+  createTestCommitCore,
   getTestRepoPath,
   initTestRepos,
 } from './testrepo';
@@ -210,5 +211,38 @@ describe('Git Repository Tests', () => {
 
     expect(await fs.exists(path.join(getTestRepoPath('diff'), 'base-folder/base.txt'))).toBe(false);
     expect(await fs.exists(path.join(getTestRepoPath('base'), 'base-folder/base.txt'))).toBe(true);
+  });
+
+  test('Rename files', async () => {
+    // await execAsync(`git mv only-base.txt only-base-renamed.txt`, { cwd: getTestRepoPath('merged') });
+
+    await fs.rename(
+      path.join(getTestRepoPath('merged'), 'only-base.txt'),
+      path.join(getTestRepoPath('merged'), 'only-base-renamed.txt')
+    );
+    await fs.writeFile(
+      path.join(getTestRepoPath('merged'), 'only-base-renamed.txt'),
+      'only-base content\nline 1\nline 2\nline 3'
+    );
+    await createTestCommitCore(getTestRepoPath('merged'), 'merged', 'Rename only-base.txt to only-base-renamed.txt');
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor.process();
+
+    await afterDiflow();
+
+    await checkStateInConfig();
+
+    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'only-base-renamed.txt'))).toBe(true);
+    expect(await fs.exists(path.join(getTestRepoPath('base'), 'only-base-renamed.txt'))).toBe(true);
+
+    const newContent = await fs.readFile(path.join(getTestRepoPath('base'), 'only-base-renamed.txt'), 'utf8');
+
+    expect(newContent.replaceAll('\r\n', '\n')).toBe('only-base content\nline 1\nline 2\nline 3');
+
+    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'only-base.txt'))).toBe(false);
+    expect(await fs.exists(path.join(getTestRepoPath('base'), 'only-base.txt'))).toBe(false);
   });
 });

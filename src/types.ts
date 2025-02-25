@@ -1,9 +1,9 @@
 export type RepoId = 'base' | 'diff' | 'merged' | 'config';
-export type FileAction = 'A' | 'D' | 'M';
+export type FileAction = 'A' | 'D' | 'M' | 'R';
 
 export interface RepoConfig {
   url: string;
-  commitTag?: string; // eg. [skip ci] for skipping github pipeline  
+  commitTag?: string; // eg. [skip ci] for skipping github pipeline
 }
 
 export interface RepoIdentifier {
@@ -45,6 +45,7 @@ export interface Commit {
 export interface ChangeItem {
   action: FileAction;
   file: string;
+  newFile?: string;
 }
 
 // export interface BranchInfo {

@@ -19,7 +19,10 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
 }
 
 export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
-  const log = await runGitCommand(repoPath, `log ${branch} --reverse --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`);
+  const log = await runGitCommand(
+    repoPath,
+    `log ${branch} --reverse --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
+  );
   const res = log
     .split('\n')
     .filter(Boolean)
@@ -64,12 +67,13 @@ export async function getDiffForCommit(repoPath: string, commitHash: string): Pr
   const diff = await runGitCommand(repoPath, `show --name-status ${commitHash}`);
   return diff
     .split('\n')
-    .filter(x => x.match(/^[AMD]\t/))
+    .filter(x => x.match(/^(A|M|D|R\d\d\d)\t/))
     .map(x => {
-      const [action, file] = x.split('\t');
+      const [action, file, newFile] = x.split('\t');
       return {
-        action: action as FileAction,
+        action: action.substring(0, 1) as FileAction,
         file,
+        newFile,
       };
     });
 }
@@ -80,6 +84,19 @@ export async function copyRepoFile(srcRepo: string, destRepo: string, file: stri
   await fs.ensureDir(path.dirname(destPath));
   await fs.copyFile(srcPath, destPath);
   console.log(`Copied ${file} from ${srcRepo} to ${destRepo}`);
+}
+
+export async function renameRepoFile(srcRepo: string, destRepo: string, srcFile: string, dstFile: string) {
+  const oldTargetFile = path.join(destRepo, srcFile);
+  if (await fs.exists(oldTargetFile)) {
+    await fs.unlink(oldTargetFile);
+  }
+  const newSourceFile = path.join(srcRepo, dstFile);
+  const newTargetFile = path.join(destRepo, dstFile);
+
+  await fs.ensureDir(path.dirname(newTargetFile));
+  await fs.copyFile(newSourceFile, newTargetFile);
+  console.log(`Renamed ${srcFile} to ${dstFile} from ${srcRepo} to ${destRepo}`);
 }
 
 export async function removeRepoFile(repoPath: string, file: string) {

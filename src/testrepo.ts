@@ -30,6 +30,10 @@ export async function createTestCommit(
   console.log('Creating commit:', repoPath, 'file:', fileName, 'content:', content);
   await fs.ensureDir(path.join(repoPath, path.dirname(fileName)));
   await fs.writeFile(path.join(repoPath, fileName), content);
+  return await createTestCommitCore(repoPath, repoid, message);
+}
+
+export async function createTestCommitCore(repoPath: string, repoid: string, message?: string) {
   await execAsync('git add .', { cwd: repoPath });
   if (message) {
     await execAsync(`git commit -m "${message}"`, { cwd: repoPath });
@@ -58,6 +62,9 @@ export async function initTestRepos() {
   await initTestRepo('merged');
 
   // Setup initial files
+  await createTestCommit(getTestRepoPath('base'), 'only-base.txt', 'only-base content\nline 1\nline 2', 'base');
+  await createTestCommit(getTestRepoPath('merged'), 'only-base.txt', 'only-base content\nline 1\nline 2', 'merged');
+
   const baseHash = await createTestCommit(getTestRepoPath('base'), 'file1.txt', 'base content', 'base');
   const diffHash = await createTestCommit(getTestRepoPath('diff'), 'file1.txt', 'different content', 'diff');
   const mergedHash = await createTestCommit(getTestRepoPath('merged'), 'file1.txt', 'different content', 'merged');

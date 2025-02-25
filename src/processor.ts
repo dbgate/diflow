@@ -8,6 +8,7 @@ import {
   getDiffForCommit,
   getLastCommitHash,
   removeRepoFile,
+  renameRepoFile,
   repoFileExists,
   repoHasModifications,
   runGitCommand,
@@ -229,7 +230,11 @@ class CommitProcessor {
     if (file.action === 'M' || file.action === 'A') {
       await copyRepoFile(this.processor.repoPaths.base, this.processor.repoPaths.merged, file.file);
     } else if (file.action === 'D') {
-      await removeRepoFile(this.processor.repoPaths.merged, file.file);
+      if (!(await repoFileExists(this.processor.repoPaths.diff, file.file))) {
+        await removeRepoFile(this.processor.repoPaths.merged, file.file);
+      }
+    } else if (file.action == 'R') {
+      await renameRepoFile(this.processor.repoPaths.base, this.processor.repoPaths.merged, file.file, file.newFile!);
     }
   }
 
@@ -242,6 +247,8 @@ class CommitProcessor {
       } else {
         await removeRepoFile(this.processor.repoPaths.merged, file.file);
       }
+    } else if (file.action == 'R') {
+      await renameRepoFile(this.processor.repoPaths.diff, this.processor.repoPaths.merged, file.file, file.newFile!);
     }
   }
 
@@ -305,6 +312,12 @@ class CommitProcessor {
     } else if (file.action === 'D') {
       await removeRepoFile(this.processor.repoPaths.base, file.file);
       await removeRepoFile(this.processor.repoPaths.diff, file.file);
+    } else if (file.action == 'R') {
+      if (await repoFileExists(this.processor.repoPaths.diff, file.file)) {
+        await renameRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.diff, file.file, file.newFile!);
+      } else {
+        await renameRepoFile(this.processor.repoPaths.merged, this.processor.repoPaths.base, file.file, file.newFile!);
+      }
     }
   }
 
