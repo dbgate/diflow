@@ -21,7 +21,7 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
 export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
   const log = await runGitCommand(
     repoPath,
-    `log ${branch} --reverse --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
+    `log ${branch} --reverse --first-parent --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
   );
   const res = log
     .split('\n')
@@ -64,7 +64,7 @@ export function filterCommitsToProcess(
 }
 
 export async function getDiffForCommit(repoPath: string, commitHash: string): Promise<ChangeItem[]> {
-  const diff = await runGitCommand(repoPath, `show --name-status ${commitHash}`);
+  const diff = await runGitCommand(repoPath, `show --name-status --diff-merges=first-parent ${commitHash}`);
   return diff
     .split('\n')
     .filter(x => x.match(/^(A|M|D|R\d\d\d)\t/))

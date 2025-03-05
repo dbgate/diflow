@@ -11,6 +11,7 @@ import {
 } from './testrepo';
 import { Processor } from './processor';
 import { execAsync, sleep } from './tools';
+import { rimraf } from 'rimraf';
 
 describe('Git Repository Tests', () => {
   beforeEach(async () => {
@@ -244,5 +245,45 @@ describe('Git Repository Tests', () => {
 
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'only-base.txt'))).toBe(false);
     expect(await fs.exists(path.join(getTestRepoPath('base'), 'only-base.txt'))).toBe(false);
+  });
+
+  test('Git merge', async () => {
+    await execAsync('git checkout -b feature', { cwd: getTestRepoPath('base') });
+    await createTestCommit(getTestRepoPath('base'), 'feature1.txt', 'feature1', 'base', 'feature1');
+
+    await sleep(1100);
+    await execAsync('git checkout master', { cwd: getTestRepoPath('base') });
+    await createTestCommit(getTestRepoPath('base'), 'master1.txt', 'master1', 'base', 'master1');
+
+    await sleep(1100);
+    await execAsync('git checkout feature', { cwd: getTestRepoPath('base') });
+    await createTestCommit(getTestRepoPath('base'), 'feature2.txt', 'feature2', 'base', 'feature2');
+
+    await beforeDiflow();
+
+    const processor1 = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor1.process();
+
+    await afterDiflow();
+
+    await checkStateInConfig();
+
+    await sleep(1100);
+    await execAsync('git checkout master', { cwd: getTestRepoPath('base') });
+    await execAsync('git merge feature', { cwd: getTestRepoPath('base') });
+
+    await beforeDiflow('tmp2');
+
+    await rimraf(path.join(__dirname, 'workrepos'));
+    const processor2 = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor2.process();
+
+    await afterDiflow();
+
+    await checkStateInConfig();
+
+    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'feature1.txt'))).toBe(true);
+    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'feature2.txt'))).toBe(true);
+    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'master1.txt'))).toBe(true);
   });
 });

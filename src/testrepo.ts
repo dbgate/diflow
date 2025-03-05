@@ -112,13 +112,13 @@ export async function initTestRepos() {
   await createTestCommit(getTestRepoPath('config'), 'state.json', stateContent, 'config');
 }
 
-export async function beforeDiflow() {
+export async function beforeDiflow(tmpBranchName = 'tmp') {
   console.log('Checking out new tmp branch');
-  await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('merged') });
-  await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('base') });
-  await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('diff') });
-  await execAsync('git checkout -b tmp', { cwd: getTestRepoPath('config') });
-  console.log('Checked out new tmp branch');
+  await execAsync(`git checkout -b ${tmpBranchName}`, { cwd: getTestRepoPath('merged') });
+  await execAsync(`git checkout -b ${tmpBranchName}`, { cwd: getTestRepoPath('base') });
+  await execAsync(`git checkout -b ${tmpBranchName}`, { cwd: getTestRepoPath('diff') });
+  await execAsync(`git checkout -b ${tmpBranchName}`, { cwd: getTestRepoPath('config') });
+  console.log(`Checked out new ${tmpBranchName} branch`);
 }
 
 export async function afterDiflow() {
