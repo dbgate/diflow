@@ -1,6 +1,9 @@
 {
-  "name": "gitdiff",
+  "name": "diflow",
   "version": "1.0.0",
+  "bin": {
+    "diflow": "./dist/diflow.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "npm run build && jest --runInBand",
@@ -10,6 +13,11 @@
     "test:dbgate": "yarn tsc && node dist/diflow sync -r https://github.com/dbgate/dbgate-diflow-config.git -b master --skip-push --clear",
     "test:dbgate:push": "yarn tsc && node dist/diflow sync -r https://github.com/dbgate/dbgate-diflow-config.git -b master --clear"
   },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],  
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/jest": "^29.5.12",
