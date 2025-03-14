@@ -281,7 +281,7 @@ class CommitProcessor {
       let target = this.processor.config?.newFilesTargetDefault ?? 'diff';
       if (
         await this.matchIdentifiers(
-          this.processor.repoPaths.diff,
+          this.processor.repoPaths.merged,
           file.file,
           this.processor.config?.repos.base.identifiers
         )
@@ -290,7 +290,7 @@ class CommitProcessor {
       }
       if (
         await this.matchIdentifiers(
-          this.processor.repoPaths.diff,
+          this.processor.repoPaths.merged,
           file.file,
           this.processor.config?.repos.diff.identifiers
         )
