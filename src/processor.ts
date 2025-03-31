@@ -228,7 +228,9 @@ class CommitProcessor {
 
   async processBaseFile(file: ChangeItem) {
     if (file.action === 'M' || file.action === 'A') {
-      await copyRepoFile(this.processor.repoPaths.base, this.processor.repoPaths.merged, file.file);
+      if (!(await repoFileExists(this.processor.repoPaths.diff, file.file))) {
+        await copyRepoFile(this.processor.repoPaths.base, this.processor.repoPaths.merged, file.file);
+      }
     } else if (file.action === 'D') {
       if (!(await repoFileExists(this.processor.repoPaths.diff, file.file))) {
         await removeRepoFile(this.processor.repoPaths.merged, file.file);
