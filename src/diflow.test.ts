@@ -10,7 +10,7 @@ import {
   initTestRepos,
 } from './testrepo';
 import { Processor } from './processor';
-import { execAsync, sleep } from './tools';
+import { cloneRepository, execAsync, runGitCommand, sleep } from './tools';
 import { rimraf } from 'rimraf';
 
 describe('Git Repository Tests', () => {
@@ -285,5 +285,31 @@ describe('Git Repository Tests', () => {
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'feature1.txt'))).toBe(true);
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'feature2.txt'))).toBe(true);
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'master1.txt'))).toBe(true);
+  });
+
+  test('Git pull --merge', async () => {
+    await createTestCommit(getTestRepoPath('base'), 'master1.txt', 'master1', 'base', 'master1');
+    await beforeDiflow();
+
+    const processor1 = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor1.process();
+
+    // await fs.ensureDir(path.join(getTestRepoPath('base_inst1')));
+    // await fs.ensureDir(path.join(getTestRepoPath('base_inst2')));
+    await execAsync(`git clone ${getTestRepoPath('base')} ${getTestRepoPath('base_inst1')}`);
+    await execAsync(`git clone ${getTestRepoPath('base')} ${getTestRepoPath('base_inst2')}`);
+
+    await createTestCommit(getTestRepoPath('base_inst1'), 'feature1.txt', 'feature1', 'base', 'feature1');
+    await createTestCommit(getTestRepoPath('base_inst2'), 'feature2.txt', 'feature2', 'base', 'feature2');
+
+    await execAsync('git push', { cwd: getTestRepoPath('base_inst1') });
+    await execAsync('git config pull.rebase false', { cwd: getTestRepoPath('base_inst2') });
+    await execAsync('git pull', { cwd: getTestRepoPath('base_inst2') });
+    await execAsync('git push', { cwd: getTestRepoPath('base_inst2') });
+    // await runGitCommand(getTestRepoPath('base_inst1'), 'push');
+    // await runGitCommand(getTestRepoPath('base_inst2'), 'push');
+
+    const processor2 = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor2.process();
   });
 });
