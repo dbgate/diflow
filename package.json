@@ -6,6 +6,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "start": "tsc --watch",
     "test": "npm run build && jest --runInBand",
     "test:ci": "jest --runInBand --json --outputFile=test-result.json --testLocationInResults --detectOpenHandles --forceExit",
     "test:init": "yarn tsc && node dist/runtest init",
