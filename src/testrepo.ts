@@ -131,6 +131,71 @@ export async function afterDiflow() {
   console.log('Checked out master branch');
 }
 
+function* walkDirectorySync(dir: string): any {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+  for (const file of files) {
+    if (file.name == '.git') {
+      continue; // Skip .git directory
+    }
+    if (file.isDirectory()) {
+      yield* walkDirectorySync(path.join(dir, file.name));
+    } else {
+      yield path.join(dir, file.name);
+    }
+  }
+}
+
+async function checkRepoFilesConsistency() {
+  for (const file of walkDirectorySync(getTestRepoPath('base'))) {
+    const relativePath = path.relative(getTestRepoPath('base'), file);
+    const baseFilePath = path.join(getTestRepoPath('base'), relativePath);
+    const diffFilePath = path.join(getTestRepoPath('diff'), relativePath);
+    const mergedFilePath = path.join(getTestRepoPath('merged'), relativePath);
+
+    const baseContent = await fs.readFile(baseFilePath, 'utf8');
+    const mergedContent = await fs.readFile(mergedFilePath, 'utf8');
+
+    if (await fs.exists(diffFilePath)) {
+      console.log(`Checking file: ${diffFilePath} and ${mergedFilePath}`);
+      const diffContent = await fs.readFile(diffFilePath, 'utf8');
+      expect(mergedContent).toBe(diffContent);
+    } else {
+      console.log(`Checking file: ${baseFilePath} and ${mergedFilePath}`);
+      expect(mergedContent).toBe(baseContent);
+    }
+  }
+
+  for (const file of walkDirectorySync(getTestRepoPath('diff'))) {
+    const relativePath = path.relative(getTestRepoPath('diff'), file);
+    const diffFilePath = path.join(getTestRepoPath('diff'), relativePath);
+    const mergedFilePath = path.join(getTestRepoPath('merged'), relativePath);
+
+    console.log(`Checking file: ${diffFilePath} and ${mergedFilePath}`);
+    const diffContent = await fs.readFile(diffFilePath, 'utf8');
+    const mergedContent = await fs.readFile(mergedFilePath, 'utf8');
+    expect(mergedContent).toBe(diffContent);
+  }
+
+  for (const file of walkDirectorySync(getTestRepoPath('merged'))) {
+    const relativePath = path.relative(getTestRepoPath('merged'), file);
+    const mergedFilePath = path.join(getTestRepoPath('merged'), relativePath);
+    const baseFilePath = path.join(getTestRepoPath('base'), relativePath);
+    const diffFilePath = path.join(getTestRepoPath('diff'), relativePath);
+
+    if (await fs.exists(diffFilePath)) {
+      console.log(`Checking file: ${diffFilePath} and ${mergedFilePath}`);
+      const diffContent = await fs.readFile(diffFilePath, 'utf8');
+      const mergedContent = await fs.readFile(mergedFilePath, 'utf8');
+      expect(mergedContent).toBe(diffContent);
+    } else {
+      console.log(`Checking file: ${baseFilePath} and ${mergedFilePath}`);
+      const baseContent = await fs.readFile(baseFilePath, 'utf8');
+      const mergedContent = await fs.readFile(mergedFilePath, 'utf8');
+      expect(mergedContent).toBe(baseContent);
+    }
+  }
+}
+
 export async function checkStateInConfig() {
   const stateContent = await fs.readFile(path.join(getTestRepoPath('config'), 'state.json'), 'utf8');
   const state = JSON.parse(stateContent) as State;
@@ -153,4 +218,5 @@ export async function checkStateInConfig() {
   // expect(state['base']['master'].committedByDiflow).toEqual([]);
   // expect(state['diff']['master'].committedByDiflow).toEqual([]);
   // expect(state['merged']['master'].committedByDiflow).toEqual([]);
+  await checkRepoFilesConsistency();
 }

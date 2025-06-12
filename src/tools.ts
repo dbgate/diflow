@@ -21,8 +21,9 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
 export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
   const log = await runGitCommand(
     repoPath,
-    `log ${branch} --reverse --simplify-merges --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
+    `log ${branch} --reverse --first-parent --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
   );
+  // --simplify-merges
   const res = log
     .split('\n')
     .filter(Boolean)
