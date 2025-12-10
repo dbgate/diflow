@@ -36,7 +36,7 @@ export async function createTestCommit(
 export async function createTestCommitCore(repoPath: string, repoid: string, message?: string) {
   await execAsync('git add .', { cwd: repoPath });
   if (message) {
-    await execAsync(`git commit -m "${message}"`, { cwd: repoPath });
+    await execAsync(`git commit -m "${message?.replace(/"/g, '')}"`, { cwd: repoPath });
   } else {
     await execAsync(`git commit -m "Commit into ${repoid}"`, { cwd: repoPath });
   }

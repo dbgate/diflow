@@ -333,7 +333,7 @@ class CommitProcessor {
           repoid != 'config' && this.processor.config?.repos[repoid]?.commitTag
             ? `${this.processor.config?.repos[repoid]?.commitTag} `
             : ''
-        } ${this.commit.message}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${
+        } ${this.commit.message?.replace(/"/g, '')}" --author="${this.commit.authorName} <${this.commit.authorEmail}>" --date="${
           this.commit.authorDate
         }"`
       );
