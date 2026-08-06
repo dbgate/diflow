@@ -11,25 +11,22 @@ jobs:
         os:
           - ubuntu-22.04
     steps:
-      - name: Context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
       - name: Use Node.js 22.x
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - name: Configure NPM token
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+          registry-url: 'https://registry.npmjs.org'
       - name: npm install
         run: |
           npm install
+      - name: Build
+        run: |
+          npm run build
       - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm publish
