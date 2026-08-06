@@ -1,6 +1,18 @@
 {
   "name": "diflow",
   "version": "1.0.2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dbgate/diflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dbgate/diflow/issues"
+  },
+  "homepage": "https://github.com/dbgate/diflow#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "bin": {
     "diflow": "dist/diflow.js"
   },
