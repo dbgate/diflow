@@ -1,27 +1,22 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-function skipPath(src: string) {
-  if (src.includes('/node_modules/')) return true;
-  if (src.includes('\\node_modules\\')) return true;
+const SKIPPED_NAMES = ['node_modules', '.git'];
 
-  if (src.includes('/.git/')) return true;
-  if (src.includes('\\.git\\')) return true;
-
-  return false;
+// tested against a single directory entry name, so that it works the same for relative and absolute paths
+function skipName(name: string) {
+  return SKIPPED_NAMES.includes(name);
 }
 
 async function copyDir(src: string, dest: string) {
   // Check if the source directory exists
-  if (!await fs.exists(src)) {
+  if (!(await fs.pathExists(src))) {
     console.error(`Source directory "${src}" does not exist.`);
     return;
   }
 
   // Create the destination directory if it does not exist
-  if (!await fs.exists(dest)) {
-    await fs.mkdir(dest, { recursive: true });
-  }
+  await fs.ensureDir(dest);
 
   // Read the contents of the source directory
   const entries = fs.readdirSync(src, { withFileTypes: true });
@@ -30,13 +25,12 @@ async function copyDir(src: string, dest: string) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    if (skipPath(srcPath)) continue;
-    if (skipPath(destPath)) continue;
+    if (skipName(entry.name)) continue;
 
     if (entry.isDirectory()) {
       await copyDir(srcPath, destPath);
     } else {
-      await fs.copy(destPath, srcPath);
+      await fs.copy(srcPath, destPath);
     }
   }
 }
