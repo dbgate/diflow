@@ -286,4 +286,67 @@ describe('Git Repository Tests', () => {
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'feature2.txt'))).toBe(true);
     expect(await fs.exists(path.join(getTestRepoPath('merged'), 'master1.txt'))).toBe(true);
   });
+
+  test('Branch moved to a side branch which merged it', async () => {
+    // master is merged into a long living side branch and that side branch becomes
+    // the new master. Last processed commit then is not on the --first-parent chain
+    // of master anymore, but it still is its ancestor.
+    const basePath = getTestRepoPath('base');
+
+    await execAsync('git checkout -b stable HEAD~1', { cwd: basePath });
+    await sleep(1100);
+    await createTestCommit(basePath, 'stable1.txt', 'stable1', 'base', 'stable1');
+
+    await sleep(1100);
+    await execAsync('git merge master --no-ff -m "Merge branch master into stable"', { cwd: basePath });
+    await execAsync('git branch -f master stable', { cwd: basePath });
+    await execAsync('git checkout master', { cwd: basePath });
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await processor.process();
+
+    await afterDiflow();
+
+    await checkStateInConfig();
+
+    expect(await fs.exists(path.join(getTestRepoPath('merged'), 'stable1.txt'))).toBe(true);
+  });
+
+  test('Last processed commit missing in repository', async () => {
+    const statePath = path.join(getTestRepoPath('config'), 'state.json');
+    const state = JSON.parse(await fs.readFile(statePath, 'utf8'));
+    state.base.lastProcessed = '0123456789012345678901234567890123456789';
+    await fs.writeFile(statePath, JSON.stringify(state, null, 2));
+    await createTestCommitCore(getTestRepoPath('config'), 'config', 'Break state.json');
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await expect(processor.process()).rejects.toThrow(/does not exist in the repository/);
+
+    await afterDiflow();
+  });
+
+  test('Last processed commit not reachable from branch', async () => {
+    // commit removed from master by a force push - diflow cannot tell what is new
+    const basePath = getTestRepoPath('base');
+    await execAsync('git checkout -b dropped', { cwd: basePath });
+    const droppedHash = await createTestCommit(basePath, 'dropped.txt', 'dropped', 'base', 'dropped');
+    await execAsync('git checkout master', { cwd: basePath });
+
+    const statePath = path.join(getTestRepoPath('config'), 'state.json');
+    const state = JSON.parse(await fs.readFile(statePath, 'utf8'));
+    state.base.lastProcessed = droppedHash;
+    await fs.writeFile(statePath, JSON.stringify(state, null, 2));
+    await createTestCommitCore(getTestRepoPath('config'), 'config', 'Point state.json to dropped commit');
+
+    await beforeDiflow();
+
+    const processor = new Processor(getTestRepoPath('config'), path.join(__dirname, 'workrepos'), 'master');
+    await expect(processor.process()).rejects.toThrow(/is not an ancestor of master/);
+
+    await afterDiflow();
+  });
 });

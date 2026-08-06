@@ -7,13 +7,15 @@ import {
   getCommits,
   getDiffForCommit,
   getLastCommitHash,
+  getObjectType,
+  isAncestorCommit,
   removeRepoFile,
   renameRepoFile,
   repoFileExists,
   repoHasModifications,
   runGitCommand,
 } from './tools';
-import { ChangeItem, Config, RepoId, RepoIdentifier, State } from './types';
+import { ChangeItem, Commit, Config, RepoId, RepoIdentifier, SourceRepoId, State } from './types';
 import { minimatch } from 'minimatch';
 import { rimraf } from 'rimraf';
 
@@ -113,33 +115,11 @@ export class Processor {
 
   async readCommitsToProcess() {
     console.log('Getting commits...');
-    const baseCommits = await getCommits(this.repoPaths.base, this.branch);
-    const diffCommits = await getCommits(this.repoPaths.diff, this.branch);
-    const mergedCommits = await getCommits(this.repoPaths.merged, this.branch);
-
     const state = await this.loadState();
 
-    const baseFilteredCommits = filterCommitsToProcess(
-      baseCommits,
-      state,
-      this.branch,
-      'base',
-      this.config!.syncCommitPrefix!
-    );
-    const diffFilteredCommits = filterCommitsToProcess(
-      diffCommits,
-      state,
-      this.branch,
-      'diff',
-      this.config!.syncCommitPrefix!
-    );
-    const mergedFilteredCommits = filterCommitsToProcess(
-      mergedCommits,
-      state,
-      this.branch,
-      'merged',
-      this.config!.syncCommitPrefix!
-    );
+    const baseFilteredCommits = await this.readNewCommits('base', state);
+    const diffFilteredCommits = await this.readNewCommits('diff', state);
+    const mergedFilteredCommits = await this.readNewCommits('merged', state);
 
     this.commitsToProcess = [
       ...baseFilteredCommits.map(x => ({ ...x, repoid: 'base' as RepoId })),
@@ -149,6 +129,36 @@ export class Processor {
     this.commitsToProcess.sort((a, b) => a.ts - b.ts);
     // console.log('Initializing branch:', this.branch, 'DONE');
     console.log('Commits to process:', this.commitsToProcess.length);
+  }
+
+  async readNewCommits(repoid: SourceRepoId, state: State): Promise<Commit[]> {
+    const lastProcessed = state[repoid].lastProcessed;
+    await this.checkLastProcessedCommit(repoid, lastProcessed);
+    const commits = await getCommits(this.repoPaths[repoid], this.branch, lastProcessed);
+    return filterCommitsToProcess(commits, this.config!.syncCommitPrefix!);
+  }
+
+  // Last processed commit must be an ancestor of the branch, otherwise we can't tell
+  // which commits are new. Being on the --first-parent chain is not required - the
+  // branch could have been merged into a side branch which then became the branch tip.
+  async checkLastProcessedCommit(repoid: SourceRepoId, lastProcessed: string) {
+    const repoPath = this.repoPaths[repoid];
+    const repoUrl = this.config!.repos[repoid].url;
+
+    if ((await getObjectType(repoPath, lastProcessed)) !== 'commit') {
+      throw new Error(
+        `Last processed commit ${lastProcessed} for ${this.branch} in ${repoid} (${repoUrl}) does not exist in the repository. ` +
+          `Fix lastProcessed of ${repoid} in state.json in config repository.`
+      );
+    }
+
+    if (!(await isAncestorCommit(repoPath, lastProcessed, this.branch))) {
+      const branchTip = (await runGitCommand(repoPath, `rev-parse ${this.branch}`)).trim();
+      throw new Error(
+        `Last processed commit ${lastProcessed} for ${this.branch} in ${repoid} (${repoUrl}) is not an ancestor of ${this.branch} (tip ${branchTip}). ` +
+          `Branch was probably rebased or force-pushed. Fix lastProcessed of ${repoid} in state.json in config repository.`
+      );
+    }
   }
 
   async loadState(): Promise<State> {

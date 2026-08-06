@@ -30,7 +30,12 @@ program
       clear: options.clear,
       secret: options.secret ?? process.env.DIFLOW_GIT_SECRET,
     });
-    await processor.process();
+    try {
+      await processor.process();
+    } catch (err: any) {
+      console.error(err?.message ?? err);
+      process.exit(1);
+    }
     console.log('Processing complete.');
   });
 

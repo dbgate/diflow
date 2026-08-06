@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { promisify } from 'util';
-import { ChangeItem, Commit, FileAction, RepoId, State } from './types';
+import { ChangeItem, Commit, FileAction } from './types';
 
 export const execAsync = promisify(exec);
 
@@ -18,10 +18,46 @@ export async function runGitCommand(repoPath: string, cmd: string): Promise<stri
   }
 }
 
-export async function getCommits(repoPath: string, branch: string): Promise<Commit[]> {
-  const log = await runGitCommand(
+// Same as runGitCommand, but a failing command is an error, not an empty result.
+// Used for commands whose result drives the decision what to process - silently
+// returning '' there would look like "nothing to do" instead of a broken repo.
+export async function runGitCommandChecked(repoPath: string, cmd: string): Promise<string> {
+  try {
+    const { stdout } = await execAsync(`git -C "${repoPath}" ${cmd}`);
+    return stdout;
+  } catch (err: any) {
+    throw new Error(`Error running git command in ${repoPath}: ${cmd}\n${err.message}`);
+  }
+}
+
+export async function getObjectType(repoPath: string, rev: string): Promise<string | null> {
+  try {
+    const { stdout } = await execAsync(`git -C "${repoPath}" cat-file -t ${rev}`);
+    return stdout.trim();
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function isAncestorCommit(repoPath: string, ancestor: string, descendant: string): Promise<boolean> {
+  try {
+    await execAsync(`git -C "${repoPath}" merge-base --is-ancestor ${ancestor} ${descendant}`);
+    return true;
+  } catch (err: any) {
+    // exit code 1 means "not an ancestor", anything else is a real error
+    if (err.code === 1) {
+      return false;
+    }
+    throw new Error(`Error checking ancestry of ${ancestor} in ${repoPath}\n${err.message}`);
+  }
+}
+
+// Returns commits of given branch, oldest first. When since is given, only commits
+// added to the branch after that commit are returned.
+export async function getCommits(repoPath: string, branch: string, since?: string): Promise<Commit[]> {
+  const log = await runGitCommandChecked(
     repoPath,
-    `log ${branch} --reverse --first-parent --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
+    `log ${since ? `${since}..${branch}` : branch} --reverse --first-parent --pretty=format:"%H@|@%ct@|@%aN@|@%aE@|@%s@|@%ad"`
   );
   const res = log
     .split('\n')
@@ -48,19 +84,8 @@ export async function cloneRepository(repoPath: string, url: string) {
   }
 }
 
-export function filterCommitsToProcess(
-  commits: Commit[],
-  state: State,
-  branch: string,
-  repoid: RepoId,
-  syncCommitPrefix: string
-): Commit[] {
-  const lastCommitIndex = commits.findIndex(x => x.commit === state[repoid].lastProcessed);
-  if (lastCommitIndex < 0) {
-    console.log(`Could not find last processed commit for ${branch} in ${repoid}`);
-    process.exit(1);
-  }
-  return commits.slice(lastCommitIndex + 1).filter(x => !x.message?.startsWith(syncCommitPrefix));
+export function filterCommitsToProcess(commits: Commit[], syncCommitPrefix: string): Commit[] {
+  return commits.filter(x => !x.message?.startsWith(syncCommitPrefix));
 }
 
 export async function getDiffForCommit(repoPath: string, commitHash: string): Promise<ChangeItem[]> {

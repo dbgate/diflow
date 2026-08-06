@@ -1,4 +1,5 @@
-export type RepoId = 'base' | 'diff' | 'merged' | 'config';
+export type SourceRepoId = 'base' | 'diff' | 'merged';
+export type RepoId = SourceRepoId | 'config';
 export type FileAction = 'A' | 'D' | 'M' | 'R';
 
 export interface RepoConfig {
